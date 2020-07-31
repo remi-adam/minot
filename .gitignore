@@ -9,6 +9,7 @@
 *.pyc
 \#
 .#
+__pycache__
 
 # Possible hidden files 
 .idea
