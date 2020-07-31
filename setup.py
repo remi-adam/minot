@@ -24,17 +24,15 @@ setup(
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Astronomy',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
     ],
     packages = find_packages(),
     install_requires=[
-        'numpy>=1.16.5',
-        'scipy>=1.2.1',
-        'astropy>=2.0.16',
-        'matplotlib>=2.2.5',
+        'numpy >= 1.6',
+        'scipy',
+        'astropy >= 1.2.1',
+        'matplotlib',
         'ebltable',
     ]
 )
