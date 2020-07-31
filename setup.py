@@ -13,7 +13,7 @@ setup(
     version=__version__,
     description='Python code to model the intra cluster medium thermal and non-thermal components and provide predictions for associated observables',
     long_description=long_description,  #this is the readme 
-    long_description_content_type='text/x-rst',
+    long_description_content_type='text/markdown',
     url='https://github.com/remi-adam/minot',
     author='Remi Adam and Hazal Goksu',
     author_email='remi.adam@llr.in2p3.fr',
