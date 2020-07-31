@@ -76,7 +76,11 @@ Depending on the python version, the automatic installation of healpy does not w
 For MAC-OS, in some version of python 2, the automatic installation of matplotlib may lead to an error related to the backend when importing matplotlib.pyplot. In this case, reinstalling matplotlib using conda, as `conda install matplotlib` should solve the problem.
 
 The automatic installation of dependencies is sometimes misbehaving. In such case, you may just install the required packages independently:
+
 `conda install astropy`
+
 `conda install numpy`
+
 `conda install scipy`
+
 `conda install matplotlib`
