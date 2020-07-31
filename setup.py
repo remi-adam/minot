@@ -31,10 +31,10 @@ setup(
     ],
     packages = find_packages(),
     install_requires=[
-        'numpy  >= 1.6',
-        'scipy',
-        'astropy >= 1.2.1',
-        'matplotlib >= 2.2.0',
+        'numpy>=1.16.5',
+        'scipy>=1.2.1',
+        'astropy>=2.0.16',
+        'matplotlib>=2.2.5',
         'ebltable',
     ]
 )
