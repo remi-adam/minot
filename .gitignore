@@ -1,0 +1,19 @@
+# Mac OSX
+.DS_Store
+
+# notebooks
+*.ipynb_checkpoints
+
+# Python and temporary files
+*~
+*.pyc
+\#
+.#
+
+# Possible hidden files 
+.idea
+
+# Packages
+*.egg-info
+dist
+build
