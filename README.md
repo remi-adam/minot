@@ -65,8 +65,7 @@ The software depends on standard python packages:
 
 But also:
 - ebltable (see https://github.com/me-manu/ebltable)
-- healpy (optional, see https://healpy.readthedocs.io/en/latest)
-Healpy is not automatically installed, but you can do it independently to benefit of a view functions that use healpy, but are not directly used in minot.
+- healpy (optional, see https://healpy.readthedocs.io/en/latest). Healpy is not automatically installed, but you can do it independently to benefit of a view functions that use healpy, but are not directly used in minot.
 
 In the case of X-ray outputs, it will be necessary to have the XSPEC software installed independently (https://heasarc.gsfc.nasa.gov/xanadu/xspec/).
 
