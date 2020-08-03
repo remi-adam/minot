@@ -1,4 +1,4 @@
-# minot: Modeling of the ICM (Non-)thermal content and Observable prediction Tools
+# minot: Modeling of the ICM (Non-)thermal content and Observables prediction Tools
 Software dedicated to provide a self-consistent modeling framework for the thermal and the non-thermal diffuse components in galaxy clusters, and provide multi-wavelenght observables predictions.
                                                             
 ## Overview of the physical processes and structure of the code
