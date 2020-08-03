@@ -70,11 +70,11 @@ But also:
 In the case of X-ray outputs, it will be necessary to have the XSPEC software installed independently (https://heasarc.gsfc.nasa.gov/xanadu/xspec/).
 
 #### Encountered issues
-Depending on the python version, the automatic installation of healpy does not work. As healpy is optional, it was removed from the dependencies and healpy can be installed independently if necessary.
+- Depending on the python version, the automatic installation of healpy does not work. As healpy is optional, it was removed from the dependencies and healpy can be installed independently if necessary.
 
-For MAC-OS, in some version of python 2, the automatic installation of matplotlib may lead to an error related to the backend when importing matplotlib.pyplot. In this case, reinstalling matplotlib using conda, as `conda install matplotlib` should solve the problem.
+- For MAC-OS, in some version of python 2, the automatic installation of matplotlib may lead to an error related to the backend when importing matplotlib.pyplot. In this case, reinstalling matplotlib using conda, as `conda install matplotlib` should solve the problem.
 
-The automatic installation of dependencies is sometimes misbehaving. In such case, you may just install the required packages independently:
+- The automatic installation of dependencies is sometimes misbehaving. In such case, you may just install the required packages independently:
 
 `conda install astropy`
 
