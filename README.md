@@ -83,3 +83,8 @@ In the case of X-ray outputs, it will be necessary to have the XSPEC software in
 `conda install scipy`
 
 `conda install matplotlib`
+
+#### Reference
+Please find the full description of the code here: https://ui.adsabs.harvard.edu/abs/2020arXiv200905373A/abstract
+
+
