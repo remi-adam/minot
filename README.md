@@ -84,9 +84,6 @@ In the case of X-ray outputs, it will be necessary to have the XSPEC software in
 
 `conda install matplotlib`
 
-#### Bugs to be corrected
-- in model.py, @density_cre1_model.setter is defined twice (lines 913 and 969). The second definition is not doing anything so that setting cluster.density_cre1_model does not change anything. This can be pypassed by changing directly the hidden underlying quantity cluster._density_cre1_model == {...} but the format is not checked in this case.
-
 #### Reference
 In case you use minot in your research, you can cite R. Adam, H. Goksu, A. Leingärtner-Goth, et al. (2020) to acknowledge its use. The paper is availlable here and contains the full description of the code: https://ui.adsabs.harvard.edu/abs/2020arXiv200905373A/abstract
 
