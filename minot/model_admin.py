@@ -636,11 +636,11 @@ class Admin(object):
         """
 
         # Get the needed parameters in case of map header
-        if self._map_header != None:
+        if self._map_header is not None:
             header = self._map_header
             
         # Get the needed parameters in case of set-by-hand map parameters
-        elif (self._map_coord != None) and (self._map_reso != None) and (self._map_fov != None):
+        elif (self._map_coord is not None) and (self._map_reso is not None) and (self._map_fov is not None):
             header = map_tools.define_std_header(self._map_coord.icrs.ra.to_value('deg'),
                                                  self._map_coord.icrs.dec.to_value('deg'),
                                                  self._map_fov.to_value('deg')[0],

@@ -965,15 +965,6 @@ class Cluster(Admin, Modpar, Physics, Observables, Plots):
         # Information
         if not self._silent: print("Setting spectrum_cre1_model value")
 
-    @density_cre1_model.setter
-    def density_cre1_model(self, value):
-        # check type
-        if type(value) != dict :
-            raise TypeError("The density CRe1 model should be a dictionary containing the name key and relevant parameters")
-
-        # Information
-        if not self._silent: print("Setting density_cre1_model value")
-
     @cre1_loss_model.setter
     def cre1_loss_model(self, value):
         # Check type

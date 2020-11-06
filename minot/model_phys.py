@@ -1747,7 +1747,7 @@ class Physics(object):
         if not os.path.exists(self._output_dir): os.mkdir(self._output_dir)
         
         # In case we want nH from real data at cluster location
-        if file_HI != None :
+        if file_HI is not None :
             # Make sure the FoV and resolution are ok
             if self._map_fov == None or self._map_reso == None:
                 fov = 1.0
@@ -1766,7 +1766,7 @@ class Physics(object):
                 print(('mean/rms < 5 and nH='+str(nH2use)+' 10^22 cm-2.'))
 
         # Or give nH directly
-        elif nH != None:
+        elif nH is not None:
             nH2use = 10**-22 * nH.to_value('cm-2')
 
         # Show error

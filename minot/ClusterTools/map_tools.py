@@ -326,7 +326,7 @@ def roi_extract_healpix(file_name, ra, dec, reso_deg, FoV_deg, save_file=None, v
                                              no_plot=True)
 
     #======== Save the data
-    if save_file != '' and save_file != None :
+    if save_file != '' and save_file is not None :
         hdu = fits.PrimaryHDU(header=head_roi)
         hdu.data = image_roi.data
         hdu.writeto(save_file, overwrite=True)        

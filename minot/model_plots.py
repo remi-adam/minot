@@ -72,7 +72,7 @@ def profile(radius, angle, prof, filename, label='Profile', R500=None):
     
     fig, ax1 = plt.subplots()
     ax1.plot(radius, prof, 'blue')
-    if R500 != None:
+    if R500 is not None:
         ax1.axvline(R500.to_value(r_unit), ymin=-1e300, ymax=1e300,
                     color='black', label='$R_{500}$', linestyle='--')
     ax1.set_xlabel('Radius ('+str(r_unit)+')')
@@ -191,7 +191,7 @@ def maps(image, header, filename,
     else:
         plt.imshow(image, origin='lower', cmap='magma')
         
-    if coord != None and theta_500 != None:
+    if coord is not None and theta_500 is not None:
         circle = Ellipse((coord.icrs.ra.deg, coord.icrs.dec.deg),
                          2*theta_500.to_value('deg')/np.cos(coord.icrs.dec.rad),
                          2*theta_500.to_value('deg'),
@@ -205,7 +205,7 @@ def maps(image, header, filename,
                        transform=ax.get_transform('fk5'), fontsize=10, color='white',
                        horizontalalignment='center',verticalalignment='center')
         
-    if coord != None and theta_trunc != None:
+    if coord is not None and theta_trunc is not None:
         circle = Ellipse((coord.icrs.ra.deg, coord.icrs.dec.deg),
                          2*theta_trunc.to_value('deg')/np.cos(coord.icrs.dec.rad),
                          2*theta_trunc.to_value('deg'),

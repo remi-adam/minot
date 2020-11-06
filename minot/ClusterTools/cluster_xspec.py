@@ -112,7 +112,7 @@ def get_xspec_flux(filename):
     flux  = float(cont[p2.end():p3.start()])
 
     # Get the rate for the instrument if it was given
-    if p4 != None:
+    if p4 is not None:
         rate   = float(cont[p4.end():p5.start()])
     else:
         rate = np.nan
@@ -155,9 +155,9 @@ def make_xspec_file(nH, Tgas, ab, redshift, emin, emax,
     if model != 'APEC' and model != 'MEKAL':
         raise ValueError("Available models are APEC or MEKAL.")
 
-    if resp_file == None and data_file != None:
+    if resp_file == None and data_file is not None:
         print('!!! WARNING: both data_file and resp_file should be given to account for instrument response')
-    if resp_file != None and data_file == None:
+    if resp_file is not None and data_file == None:
         print('!!! WARNING: both data_file and resp_file should be given to account for instrument response')
     
     #---------- Decide if nH should be applyied also to the initial model
@@ -175,7 +175,7 @@ def make_xspec_file(nH, Tgas, ab, redshift, emin, emax,
         txtfile.write('flux '+str(float(emin))+' '+str(float(emax))+' \n')
 
         # Get the rate given a response file
-        if resp_file != None and data_file != None:
+        if resp_file is not None and data_file is not None:
             txtfile.write('set xs_return_result 1 \n')
             txtfile.write('query yes \n')
             txtfile.write('data '+data_file+' \n')
