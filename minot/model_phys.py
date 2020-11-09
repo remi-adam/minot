@@ -1682,7 +1682,7 @@ class Physics(object):
         radius, pressure    = self.get_pressure_gas_profile(radius)
 
         # Correct temperature for nan (e.g. beyond Rtrunc)
-        temperature[temperature/temperature != 1] = 0
+        temperature[np.isnan(temperature)] = 0
         
         # Get the SZ spectrum
         f_nu = cluster_szspec.tsz_spec_relativistic(frequency, temperature)    # 2D: Nfreq, Ntemp
