@@ -4,6 +4,7 @@ This file deals with 'model parameters' issues regarding the Cluster Class (e.g.
 import astropy.units as u
 import numpy as np
 from scipy import interpolate
+import warnings
 
 from minot.ClusterTools import cluster_global
 from minot.ClusterTools import cluster_profile
@@ -914,9 +915,11 @@ class Modpar(object):
         elif self._pressure_gas_model['name'] == 'User':
             Ppar['profile'] = (Ppar['profile'].to_value('keV cm-3'))**scal
 
-            f = interpolate.interp1d(np.log10(Ppar['radius'].to_value('kpc')),
-                                     np.log10(Ppar['profile']), kind='linear', fill_value='extrapolate')
-            pr0 = 10**f(np.log10(r0.to_value('kpc')))
+            with warnings.catch_warnings(): # Warning raised in the case of log(0)
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                f = interpolate.interp1d(np.log10(Ppar['radius'].to_value('kpc')),
+                                         np.log10(Ppar['profile']), kind='linear', fill_value='extrapolate')
+                pr0 = 10**f(np.log10(r0.to_value('kpc')))
             
             Ppar['profile'] = Ppar['profile']/pr0*Bnorm
             
@@ -988,9 +991,11 @@ class Modpar(object):
         elif self._density_gas_model['name'] == 'User':
             Ppar['profile'] = (Ppar['profile'].to_value('cm-3'))**scal
 
-            f = interpolate.interp1d(np.log10(Ppar['radius'].to_value('kpc')),
-                                     np.log10(Ppar['profile']), kind='linear', fill_value='extrapolate')
-            pr0 = 10**f(np.log10(r0.to_value('kpc')))
+            with warnings.catch_warnings(): # Warning raised in the case of log(0)
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                f = interpolate.interp1d(np.log10(Ppar['radius'].to_value('kpc')),
+                                         np.log10(Ppar['profile']), kind='linear', fill_value='extrapolate')
+                pr0 = 10**f(np.log10(r0.to_value('kpc')))
 
             Ppar['profile'] = Ppar['profile']/pr0*Bnorm
             
@@ -1108,30 +1113,37 @@ class Modpar(object):
             user_r = model["radius"].to_value('kpc')
             user_p = model["profile"].value
 
-            # Interpolation (log-log works well, but r-log(p) works better for derivatives)
-            if derivative:
-                f = interpolate.interp1d(user_r,
-                                         np.log10(user_p), kind='linear', fill_value='extrapolate')
-                pitpl_r = 10**f(r3d_kpc)
-            else:
-                f = interpolate.interp1d(np.log10(user_r),
-                                         np.log10(user_p), kind='linear', fill_value='extrapolate')
-                pitpl_r = 10**f(np.log10(r3d_kpc))
-                
+            # Warning
             if np.amin(user_r) > np.amin(r3d_kpc) or np.amax(user_r) < np.amax(r3d_kpc):
                 if self._silent == False:
                     print('WARNING: User model interpolated beyond the provided range!')
-
-            # Correct for nan (correspond to user_p == 0 in log)
-            pitpl_r[np.isnan(pitpl_r)] = 0
-                    
-            # Correct for negative value
-            pitpl_r[pitpl_r<0] = 0
             
-            # Numerical derivative
+            # Case of derivative needed
             if derivative:
-                prof_r = np.gradient(pitpl_r, r3d_kpc)*u.Unit('kpc-1')*model["profile"].unit
+                # Compute the derivative
+                user_der = np.gradient(user_p, user_r)
+                f = interpolate.interp1d(user_r, user_der, kind='linear', fill_value='extrapolate')
+                prof_r = f(r3d_kpc)
+                
+                # Add the unit
+                prof_r = prof_r*u.Unit('kpc-1')*model["profile"].unit
+
+            # Standard case
             else:
+                # log-log interpolation of the user profile
+                with warnings.catch_warnings(): # Warning raised in the case of log(0)
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    f = interpolate.interp1d(np.log10(user_r),
+                                             np.log10(user_p), kind='linear', fill_value='extrapolate')
+                    pitpl_r = 10**f(np.log10(r3d_kpc))
+
+                # Correct for nan (correspond to user_p == 0 in log)
+                pitpl_r[np.isnan(pitpl_r)] = 0
+                
+                # Correct for negative value
+                pitpl_r[pitpl_r<0] = 0
+
+                # Add the unit
                 prof_r = pitpl_r*model["profile"].unit
 
         #---------- Otherwise nothing is done
@@ -1207,9 +1219,11 @@ class Modpar(object):
             user_s = model["spectrum"].value
 
             # Interpolation
-            f = interpolate.interp1d(np.log10(user_e),
-                                     np.log10(user_s), kind='linear', fill_value='extrapolate')
-            sitpl_e = 10**f(np.log10(eng_GeV))
+            with warnings.catch_warnings(): # Warning raised in the case of log(0)
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                f = interpolate.interp1d(np.log10(user_e),
+                                         np.log10(user_s), kind='linear', fill_value='extrapolate')
+                sitpl_e = 10**f(np.log10(eng_GeV))
 
             if np.amin(user_e) > np.amin(eng_GeV) or np.amax(user_e) < np.amax(eng_GeV):
                 if self._silent == False:
