@@ -5,7 +5,9 @@ import scipy.ndimage as ndimage
 import scipy.interpolate as interpolate
 from astropy.coordinates import SkyCoord
 import matplotlib.pyplot as plt
-
+import matplotlib as mpl
+import copy
+import warnings
 
 #===================================================
 #========== CREATE A MAP FINE FOR TEMPLATE FITTING
@@ -286,44 +288,54 @@ def roi_extract_healpix(file_name, ra, dec, reso_deg, FoV_deg, save_file=None, v
     #======== Read the healpix map
     image_hp, head_hp = healpy.fitsfunc.read_map(file_name, field=0, hdu=1, h=True, verbose=False)
 
+    #======== Color map
+    cmap = copy.copy(mpl.cm.get_cmap("viridis"))
+    
     #======== Show the full sky map
-    if visu:
-        healpy.visufunc.mollview(map=image_hp,
-                                 xsize=800,
-                                 min=None, max=None,
-                                 cmap='viridis',
-                                 notext=False,
-                                 norm='hist',
-                                 hold=False,
-                                 return_projected_map=False)
-        healpy.visufunc.projscatter(coord.galactic.l.value, coord.galactic.b.value,
-                                    lonlat=True,
-                                    marker='o', s=80, facecolors='white', edgecolors='black')
-        healpy.graticule()
-
+    if visu:        
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=mpl.cbook.mplDeprecation)
+            healpy.visufunc.mollview(map=image_hp,
+                                     xsize=800,
+                                     min=None, max=None,
+                                     cmap=cmap,
+                                     notext=False,
+                                     norm='hist',
+                                     hold=False,
+                                     return_projected_map=False)
+            healpy.visufunc.projscatter(coord.galactic.l.value, coord.galactic.b.value,
+                                        lonlat=True,
+                                        marker='o', s=80, facecolors='white', edgecolors='black')
+            healpy.graticule()
+            
     #======== Extract the gnomview
     if visu:
-        image_roi = healpy.visufunc.gnomview(map=image_hp,
-                                             coord=('G', 'C'),
-                                             rot=(coord.ra.value, coord.dec.value, 0.0),
-                                             xsize=head_roi['Naxis1'], ysize=head_roi['Naxis2'],
-                                             reso=60.0*reso_deg,
-                                             cmap='viridis',
-                                             norm='hist',
-                                             hold=False,
-                                             return_projected_map=True,
-                                             no_plot=False)
-        healpy.graticule()
-        
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=mpl.cbook.mplDeprecation)
+            image_roi = healpy.visufunc.gnomview(map=image_hp,
+                                                 coord=('G', 'C'),
+                                                 rot=(coord.ra.value, coord.dec.value, 0.0),
+                                                 xsize=head_roi['Naxis1'], ysize=head_roi['Naxis2'],
+                                                 reso=60.0*reso_deg,
+                                                 cmap=cmap,
+                                                 norm='hist',
+                                                 hold=False,
+                                                 return_projected_map=True,
+                                                 no_plot=False)
+            healpy.graticule()
+            
     else:
-        image_roi = healpy.visufunc.gnomview(map=image_hp,
-                                             coord=('G', 'C'),
-                                             rot=(coord.ra.value, coord.dec.value, 0.0),
-                                             xsize=head_roi['Naxis1'], ysize=head_roi['Naxis2'],
-                                             reso=60.0*reso_deg,
-                                             hold=False,
-                                             return_projected_map=True,
-                                             no_plot=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=mpl.cbook.mplDeprecation)
+            image_roi = healpy.visufunc.gnomview(map=image_hp,
+                                                 coord=('G', 'C'),
+                                                 rot=(coord.ra.value, coord.dec.value, 0.0),
+                                                 xsize=head_roi['Naxis1'], ysize=head_roi['Naxis2'],
+                                                 reso=60.0*reso_deg,
+                                                 cmap=cmap,
+                                                 hold=False,
+                                                 return_projected_map=True,
+                                                 no_plot=True)
 
     #======== Save the data
     if save_file != '' and save_file is not None :
