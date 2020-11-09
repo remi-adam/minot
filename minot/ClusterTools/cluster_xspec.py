@@ -36,7 +36,7 @@ def get_nH(filename, ra, dec, fov=1.0, reso=0.1, save_file=None, visu=False):
     - nH_rms (float): hydrogen column density field rms (in unit of 10^22 cm-2)
     
     """
-    print((type(fov)))
+
     if type(fov) == float:        
         fov_x = fov
         fov_y = fov
@@ -55,7 +55,7 @@ def get_nH(filename, ra, dec, fov=1.0, reso=0.1, save_file=None, visu=False):
         raise TypeError("Problem with FoV")
         
     img, head = map_tools.roi_extract_healpix(filename, ra, dec, reso, [fov_x,fov_y], save_file=save_file, visu=visu)
-    img1d = img.flatten()*1e-22
+    img1d = (img.flatten()*1e-22).data
 
     nH = np.median(img1d)
     nH_rms = np.std(img1d)
