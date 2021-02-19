@@ -88,7 +88,7 @@ In the case of X-ray outputs, it will be necessary to have the XSPEC software in
 In case you use minot in your research, you can cite R. Adam, H. Goksu, A. Leingärtner-Goth, et al. (2020) to acknowledge its use. The paper is availlable here and contains the full description of the code: https://ui.adsabs.harvard.edu/abs/2020arXiv200905373A/abstract. This also https://www.aanda.org/articles/aa/full_html/2020/12/aa39091-20/aa39091-20.html
 
 #### History
-Version 0.1.0 --> Initial release
+- Version 0.1.0 --> Initial release
 
-Version 0.1.1 --> Correction of warnings and minor bugs
+- Version 0.1.1 --> Correction of warnings and minor bugs
 
