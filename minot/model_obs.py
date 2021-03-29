@@ -401,6 +401,7 @@ class Observables(object):
     #==================================================
     # Compute gamma map
     #==================================================
+    
     def get_gamma_map(self, Emin=None, Emax=None,
                       Rmin_los=None, NR500_los=5.0,
                       Rmin=None, Rmax=None,
@@ -487,6 +488,79 @@ class Observables(object):
                 gamma_map = gamma_map.to('cm-2 s-1 sr-1')
                 
         return gamma_map
+
+
+    #==================================================
+    # Compute gamma map - healpix format
+    #==================================================
+
+    def get_gamma_hpmap(self, nside=2048, Emin=None, Emax=None,
+                        Rmin_los=None, NR500_los=5.0,
+                        Rmin=None, Rmax=None,
+                        Energy_density=False,
+                        Cframe=False,
+                        model='Kafexhiu2014',
+                        maplonlat=None, output_lonlat=False):
+        """
+        Compute the gamma ray map healpix format.
+        
+        Parameters
+        ----------
+        - nside (int): healpix Nside
+        - Emin (quantity): the lower bound for gamma ray energy integration.
+        Has no effect if Normalized is True
+        - Emax (quantity): the upper bound for gamma ray energy integration
+        Has no effect if Normalized is True
+        - Rmin_los (Quantity): the radius at which line of sight integration starts
+        - NR500_los (float): the integration will stop at NR500_los x R500
+        - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
+        (default is 1kpc, Rtruncation) for getting the normlization flux.
+        Has no effect if Normalized is False
+        - Energy_density (bool): if True, then the energy density is computed. Otherwise, 
+        the number density is computed.
+        Has no effect if Normalized is True
+        - Cframe (bool): computation assumes that we are in the cluster frame (no redshift effect)
+        - model (str): change the reference model to 'Kafexhiu2014' or 'Kelner2006'
+        - maplonlat (2d tuple of np.array): healpix maps of galactic longitude and latitude
+        which can be provided to save time in case of repeated computation
+        - output_lonlat (bool): use this keyword to also return the lon and lat maps 
+    
+        Outputs
+        ----------
+        gamma_map (np.ndarray) : the map in units of sr-1 or brightness
+
+        """
+
+        # Get a healpy radius map
+        radius, dist_map, maplon, maplat = model_tools.radius_hpmap(self._coord.galactic.l.to_value('deg'),
+                                                                    self._coord.galactic.b.to_value('deg'),
+                                                                    self._R_truncation, self._Rmin,
+                                                                    self._Npt_per_decade_integ,
+                                                                    nside=nside, maplonlat=maplonlat)
+        
+        # Project the integrand
+        r_proj, profile = self.get_gamma_profile(radius, Emin=Emin, Emax=Emax, Energy_density=Energy_density,
+                                                 Rmin_los=Rmin_los, NR500_los=NR500_los, Cframe=Cframe,
+                                                 model=model)
+
+        # Convert to angle and interpolate onto a map
+        theta_proj = (r_proj/self._D_ang).to_value('')*180.0/np.pi   # degrees
+        itpl = interpolate.interp1d(theta_proj, profile, kind='cubic', fill_value='extrapolate')
+        gamma_map = itpl(dist_map)*profile.unit
+        
+        # Avoid numerical residual ringing from interpolation
+        gamma_map[dist_map > self._theta_truncation.to_value('deg')] = 0
+        
+        # Compute the normalization: to return a map in sr-1, i.e. by computing the total flux
+        if Energy_density:
+            gamma_map = gamma_map.to('GeV cm-2 s-1 sr-1')
+        else :
+            gamma_map = gamma_map.to('cm-2 s-1 sr-1')
+            
+        if output_lonlat:
+            return gamma_map, maplon, maplat
+        else:
+            return gamma_map
 
     
     #==================================================
@@ -893,6 +967,77 @@ class Observables(object):
                 
         return nu_map
 
+
+    #==================================================
+    # Compute nu map - healpix format
+    #==================================================
+
+    def get_neutrino_hpmap(self, nside=2048, Emin=None, Emax=None,
+                           Rmin_los=None, NR500_los=5.0,
+                           Rmin=None, Rmax=None,
+                           Energy_density=False, Normalize=False,
+                           flavor='all',
+                           Cframe=False,
+                           maplonlat=None, output_lonlat=False):
+        """
+        Compute the neutrino map in healpix format.
+        
+        Parameters
+        ----------
+        - nside (int): healpix Nside
+        - Emin (quantity): the lower bound for nu energy integration.
+        Has no effect if Normalized is True
+        - Emax (quantity): the upper bound for nu energy integration
+        Has no effect if Normalized is True
+        - Rmin_los (Quantity): the radius at which line of sight integration starts
+        - NR500_los (float): the integration will stop at NR500_los x R500
+        - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
+        (default is 1kpc, Rtruncation) for getting the normlization flux.
+        Has no effect if Normalized is False
+        - Energy_density (bool): if True, then the energy density is computed. Otherwise, 
+        the number density is computed.
+        Has no effect if Normalized is True
+        - flavor (str): either 'all', 'numu' or 'nue'
+        - Cframe (bool): computation assumes that we are in the cluster frame (no redshift effect)
+        - output_lonlat (bool): use this keyword to also return the lon and lat maps 
+
+        Outputs
+        ----------
+        neutrino_map (np.ndarray) : the map in units of sr-1 or brightness
+
+        """
+
+        # Get a healpy radius map
+        radius, dist_map, maplon, maplat = model_tools.radius_hpmap(self._coord.galactic.l.to_value('deg'),
+                                                                    self._coord.galactic.b.to_value('deg'),
+                                                                    self._R_truncation, self._Rmin,
+                                                                    self._Npt_per_decade_integ,
+                                                                    nside=nside, maplonlat=maplonlat)
+        
+        # Project the integrand
+        r_proj, profile = self.get_neutrino_profile(radius, Emin=Emin, Emax=Emax, Energy_density=Energy_density,
+                                                    Rmin_los=Rmin_los, NR500_los=NR500_los, flavor=flavor,
+                                                    Cframe=Cframe)
+
+        # Convert to angle and interpolate onto a map
+        theta_proj = (r_proj/self._D_ang).to_value('')*180.0/np.pi   # degrees
+        itpl = interpolate.interp1d(theta_proj, profile, kind='cubic', fill_value='extrapolate')
+        nu_map = itpl(dist_map)*profile.unit
+        
+        # Avoid numerical residual ringing from interpolation
+        nu_map[dist_map > self._theta_truncation.to_value('deg')] = 0
+        
+        # Compute the normalization: to return a map in sr-1, i.e. by computing the total flux
+        if Energy_density:
+            nu_map = nu_map.to('GeV cm-2 s-1 sr-1')
+        else :
+            nu_map = nu_map.to('cm-2 s-1 sr-1')
+            
+        if output_lonlat:
+            return nu_map, maplon, maplat
+        else:
+            return nu_map
+    
     
 
     #==================================================
@@ -1311,6 +1456,75 @@ class Observables(object):
 
 
     #==================================================
+    # Compute IC map - healpix format
+    #==================================================
+
+    def get_ic_hpmap(self, nside=2048, Emin=None, Emax=None,
+                     Rmin_los=None, NR500_los=5.0,
+                     Rmin=None, Rmax=None,
+                     Energy_density=False,
+                     Cframe=False,
+                     maplonlat=None, output_lonlat=False):
+        """
+        Compute the inverse Compton map in the healpix format
+        
+        Parameters
+        ----------
+        - nside (int): healpix Nside
+        - Emin (quantity): the lower bound for IC energy integration.
+        - Emax (quantity): the upper bound for IC energy integration
+        - Rmin_los (Quantity): the radius at which line of sight integration starts
+        - NR500_los (float): the integration will stop at NR500_los x R500
+        - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
+        (default is 1kpc, Rtruncation) for getting the normlization flux.
+        Has no effect if Normalized is False
+        - Energy_density (bool): if True, then the energy density is computed. Otherwise, 
+        the number density is computed.
+        Has no effect if Normalized is True
+        - Cframe (bool): computation assumes that we are in the cluster frame (no redshift effect)
+        - maplonlat (2d tuple of np.array): healpix maps of galactic longitude and latitude
+        which can be provided to save time in case of repeated computation
+        - output_lonlat (bool): use this keyword to also return the lon and lat maps 
+    
+        Outputs
+        ----------
+        ic_map (np.ndarray) : the map in units of sr-1 or brightness
+
+        """
+        
+        # Get a healpy radius map
+        radius, dist_map, maplon, maplat = model_tools.radius_hpmap(self._coord.galactic.l.to_value('deg'),
+                                                                    self._coord.galactic.b.to_value('deg'),
+                                                                    self._R_truncation, self._Rmin,
+                                                                    self._Npt_per_decade_integ,
+                                                                    nside=nside, maplonlat=maplonlat)
+        
+        # Project the integrand
+        r_proj, profile = self.get_ic_profile(radius, Emin=Emin, Emax=Emax, Energy_density=Energy_density,
+                                              Rmin_los=Rmin_los, NR500_los=NR500_los, Cframe=Cframe)
+
+        # Convert to angle and interpolate onto a map
+        theta_proj = (r_proj/self._D_ang).to_value('')*180.0/np.pi   # degrees
+        itpl = interpolate.interp1d(theta_proj, profile, kind='cubic', fill_value='extrapolate')
+        ic_map = itpl(dist_map)*profile.unit
+        
+        # Avoid numerical residual ringing from interpolation
+        ic_map[dist_map > self._theta_truncation.to_value('deg')] = 0
+        
+        # Compute the normalization: to return a map in sr-1, i.e. by computing the total flux
+        if Energy_density:
+            ic_map = ic_map.to('GeV cm-2 s-1 sr-1')
+        else :
+            ic_map = ic_map.to('cm-2 s-1 sr-1')
+            
+        if output_lonlat:
+            return ic_map, maplon, maplat
+        else:
+            return ic_map
+
+    
+
+    #==================================================
     # Compute synchrotron spectrum
     #==================================================
 
@@ -1558,6 +1772,7 @@ class Observables(object):
     #==================================================
     # Compute synchrotron map
     #==================================================
+    
     def get_synchrotron_map(self, freq0=1*u.GHz,
                             Rmin_los=None, NR500_los=5.0,
                             Rmin=None, Rmax=None,
@@ -1632,6 +1847,67 @@ class Observables(object):
             synchrotron_map = synchrotron_map.to('Jy sr-1')
                 
         return synchrotron_map
+
+
+    #==================================================
+    # Compute synchrotron map - healpix format
+    #==================================================
+    
+    def get_synchrotron_hpmap(self, nside=2048, 
+                              freq0=1*u.GHz,
+                              Rmin_los=None, NR500_los=5.0,
+                              Rmin=None, Rmax=None,
+                              Cframe=False,
+                              maplonlat=None, output_lonlat=False):
+        """
+        Compute the synchrotron map in the healpix format.
+        
+        Parameters
+        ----------
+        - nside (int): healpix Nside
+        - freq0 (quantity): the frequency at wich we work
+        - Rmin_los (Quantity): the radius at which line of sight integration starts
+        - NR500_los (float): the integration will stop at NR500_los x R500
+        - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
+        (default is 1kpc, Rtruncation) for getting the normlization flux.
+        Has no effect if Normalized is False
+        - Cframe (bool): computation assumes that we are in the cluster frame (no redshift effect)
+        - maplonlat (2d tuple of np.array): healpix maps of galactic longitude and latitude
+        which can be provided to save time in case of repeated computation
+        - output_lonlat (bool): use this keyword to also return the lon and lat maps 
+    
+        Outputs
+        ----------
+        synchrotron_map (np.ndarray) : the map in units of sr-1 or brightness
+        
+        """
+
+        # Get a healpy radius map
+        radius, dist_map, maplon, maplat = model_tools.radius_hpmap(self._coord.galactic.l.to_value('deg'),
+                                                                    self._coord.galactic.b.to_value('deg'),
+                                                                    self._R_truncation, self._Rmin,
+                                                                    self._Npt_per_decade_integ,
+                                                                    nside=nside, maplonlat=maplonlat)
+        
+        # Project the integrand
+        r_proj, profile = self.get_synchrotron_profile(radius, freq0=freq0,
+                                                       Rmin_los=Rmin_los, NR500_los=NR500_los, Cframe=Cframe)
+    
+        # Convert to angle and interpolate onto a map
+        theta_proj = (r_proj/self._D_ang).to_value('')*180.0/np.pi   # degrees
+        itpl = interpolate.interp1d(theta_proj, profile, kind='cubic', fill_value='extrapolate')
+        synchrotron_map = itpl(dist_map)*profile.unit
+            
+        # Avoid numerical residual ringing from interpolation
+        synchrotron_map[dist_map > self._theta_truncation.to_value('deg')] = 0
+            
+        # Return the result
+        synchrotron_map = synchrotron_map.to('Jy sr-1')
+                
+        if output_lonlat:
+            return synchrotron_map, maplon, maplat
+        else:
+            return synchrotron_map
 
     
     #==================================================
@@ -1894,6 +2170,7 @@ class Observables(object):
     #==================================================
     # Compute SZ map
     #==================================================
+    
     def get_sz_map(self, freq0=100*u.GHz, Compton_only=False,
                    Rmin_los=None, NR500_los=5.0,
                    Rmin=None, Rmax=None,
@@ -1976,6 +2253,69 @@ class Observables(object):
                 sz_map = sz_map.to('Jy sr-1')
                 
         return sz_map
+
+
+    #==================================================
+    # Compute SZ map - healpix format
+    #==================================================
+    
+    def get_sz_hpmap(self, nside=2048, freq0=100*u.GHz, Compton_only=False,
+                     Rmin_los=None, NR500_los=5.0,
+                     Rmin=None, Rmax=None, 
+                     maplonlat=None, output_lonlat=False):
+        """
+        Compute the SZ map projected onto a healpix map.
+        
+        Parameters
+        ----------
+        - nside (int): healpix Nside
+        - freq0 (quantity): the frequency at wich we work
+        Has no effect if Normalized is True
+        - Compton_only (bool): Output the Compton parameter instead of the spectrum. In the case of
+        Compton only, the frequency input does not matter 
+        - Rmin_los (Quantity): the radius at which line of sight integration starts
+        - NR500_los (float): the integration will stop at NR500_los x R500
+        - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
+        (default is 1kpc, Rtruncation) for getting the normlization flux.
+        Has no effect if Normalized is False
+        - maplonlat (2d tuple of np.array): healpix maps of galactic longitude and latitude
+        which can be provided to save time in case of repeated computation
+        - output_lonlat (bool): use this keyword to also return the lon and lat maps 
+        
+        Outputs
+        ----------
+        sz_map (healpix map) : the map in units of brightness, or Compton
+        """
+        
+        # Get a healpy radius map
+        radius, dist_map, maplon, maplat = model_tools.radius_hpmap(self._coord.galactic.l.to_value('deg'),
+                                                                    self._coord.galactic.b.to_value('deg'),
+                                                                    self._R_truncation, self._Rmin,
+                                                                    self._Npt_per_decade_integ,
+                                                                    nside=nside, maplonlat=maplonlat)
+        
+        # Project the integrand
+        r_proj, profile = self.get_sz_profile(radius, freq0=freq0, Compton_only=Compton_only,
+                                              Rmin_los=Rmin_los, NR500_los=NR500_los)
+        
+        # Convert to angle and interpolate onto a map
+        theta_proj = (r_proj/self._D_ang).to_value('')*180.0/np.pi   # degrees
+        itpl = interpolate.interp1d(theta_proj, profile, kind='cubic', fill_value='extrapolate')
+        sz_map = itpl(dist_map)*profile.unit
+        
+        # Avoid numerical residual ringing from interpolation
+        sz_map[dist_map > self._theta_truncation.to_value('deg')] = 0
+        
+        # Return the results
+        if Compton_only:
+            sz_map = sz_map.to('adu')
+        else:
+            sz_map = sz_map.to('Jy sr-1')
+                    
+        if output_lonlat:
+            return sz_map, maplon, maplat
+        else:
+            return sz_map
 
     
     #==================================================
@@ -2331,7 +2671,7 @@ class Observables(object):
 
         Outputs
         ----------
-        synchrotron_map (np.ndarray) : the map in units of sr-1 or brightness
+        xray_map (np.ndarray) : the map in units of sr-1 or brightness
 
         """
 
@@ -2391,3 +2731,76 @@ class Observables(object):
             
         return xray_map
     
+
+    #==================================================
+    # Compute Xray map - healpix format
+    #==================================================
+    
+    def get_xray_hpmap(self, nside=2048, 
+                       Rmin_los=None, NR500_los=5.0,
+                       Rmin=None, Rmax=None,
+                       output_type='C',
+                       Cframe=False,
+                       maplonlat=None, output_lonlat=False):
+        """
+        Compute the Xray map projected onto a healpix format.
+        
+        Parameters
+        ----------
+        - nside (int): healpix Nside
+        - Rmin_los (Quantity): the radius at which line of sight integration starts
+        - NR500_los (float): the integration will stop at NR500_los x R500
+        - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
+        (default is 1kpc, Rtruncation) for getting the normlization flux.
+        Has no effect if Normalized is False
+        - output_type (str): type of output
+        S == energy counts in erg/s/cm^2/sr
+        C == counts in ph/s/cm^2/sr
+        R == count rate in ph/s/sr (accounting for instrumental response)
+        - Cframe (bool): computation assumes that we are in the cluster frame (no redshift effect)
+        - maplonlat (2d tuple of np.array): healpix maps of galactic longitude and latitude
+        which can be provided to save time in case of repeated computation
+        - output_lonlat (bool): use this keyword to also return the lon and lat maps 
+        
+        Outputs
+        ----------
+        xray_map (np.ndarray) : the map in units of sr-1 or brightness
+        
+        """
+        
+        # Check output type
+        output_list = ['S', 'C', 'R']
+        if output_type not in output_list:
+            raise ValueError("Available output_type are S, C and R.")        
+        
+        # Get a healpy radius map
+        radius, dist_map, maplon, maplat = model_tools.radius_hpmap(self._coord.galactic.l.to_value('deg'),
+                                                                    self._coord.galactic.b.to_value('deg'),
+                                                                    self._R_truncation, self._Rmin,
+                                                                    self._Npt_per_decade_integ,
+                                                                    nside=nside, maplonlat=maplonlat)
+        
+        # Project the integrand
+        r_proj, profile = self.get_xray_profile(radius, Rmin_los=Rmin_los, NR500_los=NR500_los, 
+                                                output_type=output_type, Cframe=Cframe)
+           
+        # Convert to angle and interpolate onto a map
+        theta_proj = (r_proj/self._D_ang).to_value('')*180.0/np.pi   # degrees
+        itpl = interpolate.interp1d(theta_proj, profile, kind='cubic', fill_value='extrapolate')
+        xray_map = itpl(dist_map)*profile.unit
+            
+        # Avoid numerical residual ringing from interpolation
+        xray_map[dist_map > self._theta_truncation.to_value('deg')] = 0
+            
+        # Return the result
+        if output_type == 'S':
+            xray_map = xray_map.to('erg s-1 cm-2 sr-1')
+        if output_type == 'C':
+            xray_map = xray_map.to('s-1 cm-2 sr-1')
+        if output_type == 'R':
+            xray_map = xray_map.to('s-1 sr-1')
+                
+        if output_lonlat:
+            return xray_map, maplon, maplat
+        else:
+            return xray_map

@@ -6,6 +6,8 @@ import astropy.units as u
 import numpy as np
 import scipy.interpolate as interpolate
 
+from minot.ClusterTools import map_tools
+
 
 #==================================================
 # Check radius
@@ -424,3 +426,58 @@ def los_integration_1dfunc(f_r, r3d, r2d, los):
     I_los = trapz_loglog(2*f_r_g2*fr_unit, los, axis=1, intervals=False)
     
     return I_los
+
+
+#==================================================
+# Radius healpix map
+#==================================================
+
+def radius_hpmap(glon, glat,
+                 R_truncation, Rmin,
+                 Npt_per_decade_integ,
+                 nside=2048, maplonlat=None):
+    """
+    Compute a radius map in healpix
+    
+    Parameters
+    ----------
+    - glon/glat (deg): galactic longitude and latitude in degrees
+    - R_truncation (quantity): the truncation radius
+    - Rmin (quantity): the minimum radius
+    - nside (int): healpix Nside
+    - Npt_per_decade_integ (int): the number of point per decade
+    - maplonlat (2d tuple of np.array): healpix maps of galactic longitude and latitude
+    which can be provided to save time in case of repeated computation
+    
+    Returns
+    -------
+    - radius (array): the radius array from Rmin to R_truncation
+    - dist_map (array): distance map from center
+    - maplon/lat (array): longitude and latidute maps
+
+    """
+
+    try:
+        import healpy
+    except:
+        print("Healpy is not installed while it is requiered by get_*_hpmap")
+    
+    # Get a coord map
+    if maplonlat is None:
+        npix = healpy.nside2npix(nside)
+        ipix = np.linspace(0, npix, npix, dtype=int)
+        angle = healpy.pix2ang(nside, ipix, lonlat=False)
+        maplon = angle[1] * 180.0/np.pi
+        maplat = 90.0 - angle[0] * 180.0/np.pi
+    else:
+        maplon = maplonlat[0]
+        maplat = maplonlat[1]
+        
+    # Get a cluster distance map (in deg)
+    dist_map = map_tools.greatcircle(maplon, maplat, glon, glat)
+    dist_map[np.isnan(dist_map)] = 180.0 # some pixels are NaN for dist = 180
+    
+    # Define the radius used fo computing the profile
+    radius = sampling_array(Rmin, R_truncation, NptPd=Npt_per_decade_integ, unit=True)
+
+    return radius, dist_map, maplon, maplat
