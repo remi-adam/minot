@@ -38,34 +38,15 @@ class Observables(object):
 
     Methods
     ----------  
-    - get_gamma_spectrum(self, energy=np.logspace(-2,6,1000)*u.GeV, Rmax=None,type_integral='spherical', 
-    NR500_los=5.0, Npt_los=100): compute the gamma ray spectrum integrating over the volume up to Rmax
-    - get_gamma_profile(self, radius=np.logspace(0,4,1000)*u.kpc, Emin=10.0*u.MeV, Emax=1.0*u.PeV, 
-    Energy_density=False, NR500_los=5.0, Npt_los=100): compute the gamma ray profile, integrating over 
-    the energy between the gamma ray energy Emin and Emax.
-    - get_gamma_flux(self, Rmax=None, type_integral='spherical', NR500_los=5.0, Npt_los=100,
-    Emin=10.0*u.MeV, Emax=1.0*u.PeV, Energy_density=False): compute the gamma ray flux between 
-    energy range and for R>Rmax.
-    - get_gamma_template_map(self, NR500_los=5.0, Npt_los=100): compute the gamma ray template map, 
-    normalized so that the integral over the overall cluster is 1.
+    - get_*_spectrum(): compute the {* = gamma, neutrinos, IC, radio, SZ, Xray} spectrum 
+    integrating over the volume up to Rmax
+    - get_*_profile(): compute the {* = gamma, neutrinos, IC, radio, SZ, Xray} profile, 
+    integrating over the energy if relevant
+    - get_*_flux(): compute the {* = gamma, neutrinos, IC, radio, SZ, Xray} flux integrating 
+    the energy range and for R>Rmax if relevant.
+    - get_*_map(): compute a {* = gamma, neutrinos, IC, radio, SZ, Xray} map.
+    - get_*_hpmap(): compute a {* = gamma, neutrinos, IC, radio, SZ, Xray} map, healpix format.
     
-    - get_ysph_profile(self, radius=np.logspace(0,4,1000)*u.kpc): compute the spherically 
-    integrated compton parameter profile
-    - get_ycyl_profile(self, radius=np.logspace(0,4,1000)*u.kpc): compute the cylindrincally 
-    integrated Compton parameter profile
-    - get_y_compton_profile(self, radius=np.logspace(0,4,1000)*u.kpc, NR500_los=5.0, Npt_los=100):
-    compute the Compton parameter profile
-    - get_ymap(self, FWHM=None, NR500_los=5.0, Npt_los=100): compute a Compton parameter map.
-
-    - get_sx_profile(self, radius=np.logspace(0,4,1000)*u.kpc, NR500_los=5.0, Npt_los=100,
-    output_type='S'): compute the Xray surface brightness profile
-    - get_fxsph_profile(self, radius=np.logspace(0,4,1000)*u.kpc, output_type='S'): compute the Xray 
-    spherically integrated flux profile
-    - get_fxcyl_profile(self, radius=np.logspace(0,4,1000)*u.kpc, NR500_los=5.0, Npt_los=100,
-    output_type='S'): compute the Xray cylindrically integrated flux profile
-    - get_sxmap(self, FWHM=None, NR500_los=5.0, Npt_los=100, output_type='S'): compute the Xray 
-    surface brigthness map
-
     """
     
     #==================================================
@@ -136,10 +117,12 @@ class Observables(object):
             Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)
             Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
             r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             r2d = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
             dN_dEdVdt = self.get_rate_gamma(energy_rf, r3d, model=model)
-            dN_dEdt = model_tools.cylindrical_integration(dN_dEdVdt, energy, r3d, r2d, los, Rtrunc=self._R_truncation)
+            dN_dEdt = model_tools.cylindrical_integration(dN_dEdVdt, energy, r3d, r2d, los,
+                                                          Rtrunc=self._R_truncation)
         
         # From intrinsic luminosity to flux
         dN_dEdSdt = dN_dEdt / (4*np.pi * self._D_lum**2)
@@ -178,6 +161,7 @@ class Observables(object):
 
         Outputs
         ----------
+        - radius (quantity): the projected 2d radius in unit of kpc
         - dN_dSdtdO (np.ndarray) : the spectrum in units of cm-2 s-1 sr-1 or GeV cm-2 s-1 sr-1
 
         """
@@ -206,7 +190,8 @@ class Observables(object):
         Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)        
         Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
         r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                         NptPd=self._Npt_per_decade_integ, unit=True)
         dN_dEdVdt = self.get_rate_gamma(eng_rf, r3d, model=model)
 
         # Apply EBL absorbtion
@@ -303,7 +288,8 @@ class Observables(object):
             # Get a spectrum
             energy = model_tools.sampling_array(Emin, Emax, NptPd=self._Npt_per_decade_integ, unit=True)
             energy, dN_dEdSdt = self.get_gamma_spectrum(energy, Rmin=Rmin, Rmax=Rmax,
-                                                        type_integral=type_integral, Rmin_los=Rmin_los, NR500_los=NR500_los,
+                                                        type_integral=type_integral, Rmin_los=Rmin_los,
+                                                        NR500_los=NR500_los,
                                                         Cframe=Cframe, model=model)
 
             # Integrate over it and return
@@ -312,9 +298,11 @@ class Observables(object):
         #----- Case of energy array
         if type(Emin.value) == np.ndarray:
             # Get a spectrum
-            energy = model_tools.sampling_array(np.amin(Emin.value)*Emin.unit, Emax, NptPd=self._Npt_per_decade_integ, unit=True)
+            energy = model_tools.sampling_array(np.amin(Emin.value)*Emin.unit, Emax,
+                                                NptPd=self._Npt_per_decade_integ, unit=True)
             energy, dN_dEdSdt = self.get_gamma_spectrum(energy, Rmin=Rmin, Rmax=Rmax,
-                                                        type_integral=type_integral, Rmin_los=Rmin_los, NR500_los=NR500_los,
+                                                        type_integral=type_integral, Rmin_los=Rmin_los,
+                                                        NR500_los=NR500_los,
                                                         Cframe=Cframe, model=model)
 
             # Integrate over it and return
@@ -347,7 +335,8 @@ class Observables(object):
                 Rmax3d = np.sqrt((NR500_los*self._R500)**2 + (np.amax(Rmax.value)*Rmax.unit)**2)*1.1        
                 Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)*0.9
             r3d = model_tools.sampling_array(Rmin3d, Rmax3d, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             dN_dEdVdt = self.get_rate_gamma(eng_rf, r3d, model=model)
 
             # Apply EBL absorbtion
@@ -376,7 +365,8 @@ class Observables(object):
             # Case of cylindrical integral
             if type_integral == 'cylindrical':
                 # Compute integral over l.o.s.
-                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit, NptPd=self._Npt_per_decade_integ, unit=True)
+                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit,
+                                                    NptPd=self._Npt_per_decade_integ, unit=True)
                 dN_dVdt_proj = model_tools.los_integration_1dfunc(dN_dVdt, r3d, radius, los)
                 dN_dVdt_proj[radius > self._R_truncation] = 0
 
@@ -444,7 +434,8 @@ class Observables(object):
         ra_map, dec_map = map_tools.get_radec_map(header)
 
         # Get a cluster distance map (in deg)
-        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'), self._coord.icrs.dec.to_value('deg'))
+        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'),
+                                         self._coord.icrs.dec.to_value('deg'))
         
         # Define the radius used fo computing the profile
         theta_max = np.amax(dist_map) # maximum angle from the cluster
@@ -458,7 +449,8 @@ class Observables(object):
         
         # Project the integrand
         r_proj, profile = self.get_gamma_profile(radius, Emin=Emin, Emax=Emax, Energy_density=Energy_density,
-                                                 Rmin_los=Rmin_los, NR500_los=NR500_los, Cframe=Cframe, model=model)
+                                                 Rmin_los=Rmin_los, NR500_los=NR500_los,
+                                                 Cframe=Cframe, model=model)
 
         # Convert to angle and interpolate onto a map
         theta_proj = (r_proj/self._D_ang).to_value('')*180.0/np.pi   # degrees
@@ -631,10 +623,12 @@ class Observables(object):
             Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)
             Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
             r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             r2d = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
             dN_dEdVdt = self.get_rate_neutrino(energy_rf, r3d, flavor=flavor)
-            dN_dEdt = model_tools.cylindrical_integration(dN_dEdVdt, energy, r3d, r2d, los, Rtrunc=self._R_truncation)
+            dN_dEdt = model_tools.cylindrical_integration(dN_dEdVdt, energy, r3d, r2d, los,
+                                                          Rtrunc=self._R_truncation)
         
         # From intrinsic luminosity to flux
         dN_dEdSdt = dN_dEdt / (4*np.pi * self._D_lum**2)
@@ -668,6 +662,7 @@ class Observables(object):
 
         Outputs
         ----------
+        - radius (quantity): the projected 2d radius in unit of kpc
         - dN_dSdtdO (np.ndarray) : the spectrum in units of cm-2 s-1 sr-1 or GeV cm-2 s-1 sr-1
 
         """
@@ -696,7 +691,8 @@ class Observables(object):
         Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)        
         Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
         r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                         NptPd=self._Npt_per_decade_integ, unit=True)
         dN_dEdVdt = self.get_rate_neutrino(eng_rf, r3d, flavor=flavor)
 
         # Compute energy integal
@@ -788,7 +784,8 @@ class Observables(object):
             # Get a spectrum
             energy = model_tools.sampling_array(Emin, Emax, NptPd=self._Npt_per_decade_integ, unit=True)
             energy, dN_dEdSdt = self.get_neutrino_spectrum(energy, Rmin=Rmin, Rmax=Rmax,
-                                                           type_integral=type_integral, Rmin_los=Rmin_los, NR500_los=NR500_los,
+                                                           type_integral=type_integral,
+                                                           Rmin_los=Rmin_los, NR500_los=NR500_los,
                                                            flavor=flavor, Cframe=Cframe)
 
             # Integrate over it and return
@@ -797,9 +794,11 @@ class Observables(object):
         #----- Case of energy array
         if type(Emin.value) == np.ndarray:
             # Get a spectrum
-            energy = model_tools.sampling_array(np.amin(Emin.value)*Emin.unit, Emax, NptPd=self._Npt_per_decade_integ, unit=True)
+            energy = model_tools.sampling_array(np.amin(Emin.value)*Emin.unit, Emax,
+                                                NptPd=self._Npt_per_decade_integ, unit=True)
             energy, dN_dEdSdt = self.get_neutrino_spectrum(energy, Rmin=Rmin, Rmax=Rmax,
-                                                           type_integral=type_integral, Rmin_los=Rmin_los, NR500_los=NR500_los,
+                                                           type_integral=type_integral, Rmin_los=Rmin_los,
+                                                           NR500_los=NR500_los,
                                                            flavor=flavor, Cframe=Cframe)
 
             # Integrate over it and return
@@ -831,7 +830,8 @@ class Observables(object):
                 Rmax3d = np.sqrt((NR500_los*self._R500)**2 + (np.amax(Rmax.value)*Rmax.unit)**2)*1.1        
                 Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)*0.9
             r3d = model_tools.sampling_array(Rmin3d, Rmax3d, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             dN_dEdVdt = self.get_rate_neutrino(eng_rf, r3d)
 
             # Compute energy integal
@@ -855,7 +855,8 @@ class Observables(object):
             # Case of cylindrical integral
             if type_integral == 'cylindrical':
                 # Compute integral over l.o.s.
-                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit, NptPd=self._Npt_per_decade_integ, unit=True)
+                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit,
+                                                    NptPd=self._Npt_per_decade_integ, unit=True)
                 dN_dVdt_proj = model_tools.los_integration_1dfunc(dN_dVdt, r3d, radius, los)
                 dN_dVdt_proj[radius > self._R_truncation] = 0
 
@@ -880,6 +881,7 @@ class Observables(object):
     #==================================================
     # Compute neutrino map
     #==================================================
+    
     def get_neutrino_map(self, Emin=None, Emax=None,
                          Rmin_los=None, NR500_los=5.0,
                          Rmin=None, Rmax=None,
@@ -922,7 +924,8 @@ class Observables(object):
         ra_map, dec_map = map_tools.get_radec_map(header)
 
         # Get a cluster distance map (in deg)
-        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'), self._coord.icrs.dec.to_value('deg'))
+        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'),
+                                         self._coord.icrs.dec.to_value('deg'))
         
         # Define the radius used fo computing the profile
         theta_max = np.amax(dist_map) # maximum angle from the cluster
@@ -936,7 +939,8 @@ class Observables(object):
         
         # Project the integrand
         r_proj, profile = self.get_neutrino_profile(radius, Emin=Emin, Emax=Emax, Energy_density=Energy_density,
-                                                    Rmin_los=Rmin_los, NR500_los=NR500_los, flavor=flavor, Cframe=Cframe)
+                                                    Rmin_los=Rmin_los, NR500_los=NR500_los,
+                                                    flavor=flavor, Cframe=Cframe)
 
         # Convert to angle and interpolate onto a map
         theta_proj = (r_proj/self._D_ang).to_value('')*180.0/np.pi   # degrees
@@ -955,7 +959,8 @@ class Observables(object):
             if Rmin is None:
                 Rmin = self._Rmin
             flux = self.get_neutrino_flux(Rmin=Rmin, Rmax=Rmax, type_integral='cylindrical', NR500_los=NR500_los,
-                                          Emin=Emin, Emax=Emax, Energy_density=Energy_density, flavor=flavor, Cframe=Cframe)
+                                          Emin=Emin, Emax=Emax, Energy_density=Energy_density,
+                                          flavor=flavor, Cframe=Cframe)
             nu_map = nu_map / flux
             nu_map = nu_map.to('sr-1')
 
@@ -1038,7 +1043,6 @@ class Observables(object):
         else:
             return nu_map
     
-    
 
     #==================================================
     # Compute inverse compton spectrum
@@ -1112,10 +1116,12 @@ class Observables(object):
             Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)
             Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
             r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             r2d = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
             dN_dEdVdt = self.get_rate_ic(energy_rf, r3d)
-            dN_dEdt = model_tools.cylindrical_integration(dN_dEdVdt, energy, r3d, r2d, los, Rtrunc=self._R_truncation)
+            dN_dEdt = model_tools.cylindrical_integration(dN_dEdVdt, energy, r3d, r2d, los,
+                                                          Rtrunc=self._R_truncation)
         
         # From intrinsic luminosity to flux
         dN_dEdSdt = dN_dEdt / (4*np.pi * self._D_lum**2)
@@ -1152,6 +1158,7 @@ class Observables(object):
 
         Outputs
         ----------
+        - radius (quantity): the projected 2d radius in unit of kpc
         - dN_dSdtdO (np.ndarray) : the spectrum in units of cm-2 s-1 sr-1 or GeV cm-2 s-1 sr-1
 
         """
@@ -1180,7 +1187,8 @@ class Observables(object):
         Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)        
         Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
         r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                         NptPd=self._Npt_per_decade_integ, unit=True)
         dN_dEdVdt = self.get_rate_ic(eng_rf, r3d)
 
         # Apply EBL absorbtion
@@ -1209,6 +1217,7 @@ class Observables(object):
             
         return radius, dN_dSdtdO
 
+    
     #==================================================
     # Compute gamma ray flux
     #==================================================
@@ -1276,7 +1285,8 @@ class Observables(object):
             # Get a spectrum
             energy = model_tools.sampling_array(Emin, Emax, NptPd=self._Npt_per_decade_integ, unit=True)
             energy, dN_dEdSdt = self.get_ic_spectrum(energy, Rmin=Rmin, Rmax=Rmax,
-                                                     type_integral=type_integral, Rmin_los=Rmin_los, NR500_los=NR500_los, Cframe=Cframe)
+                                                     type_integral=type_integral,
+                                                     Rmin_los=Rmin_los, NR500_los=NR500_los, Cframe=Cframe)
 
             # Integrate over it and return
             flux = model_tools.energy_integration(dN_dEdSdt, energy, Energy_density=Energy_density)
@@ -1284,9 +1294,11 @@ class Observables(object):
         #----- Case of energy array
         if type(Emin.value) == np.ndarray:
             # Get a spectrum
-            energy = model_tools.sampling_array(np.amin(Emin.value)*Emin.unit, Emax, NptPd=self._Npt_per_decade_integ, unit=True)
+            energy = model_tools.sampling_array(np.amin(Emin.value)*Emin.unit, Emax,
+                                                NptPd=self._Npt_per_decade_integ, unit=True)
             energy, dN_dEdSdt = self.get_ic_spectrum(energy, Rmin=Rmin, Rmax=Rmax,
-                                                     type_integral=type_integral, Rmin_los=Rmin_los, NR500_los=NR500_los, Cframe=Cframe)
+                                                     type_integral=type_integral, Rmin_los=Rmin_los,
+                                                     NR500_los=NR500_los, Cframe=Cframe)
 
             # Integrate over it and return
             if Energy_density:
@@ -1317,7 +1329,8 @@ class Observables(object):
                 Rmax3d = np.sqrt((NR500_los*self._R500)**2 + (np.amax(Rmax.value)*Rmax.unit)**2)*1.1        
                 Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)*0.9
             r3d = model_tools.sampling_array(Rmin3d, Rmax3d, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             dN_dEdVdt = self.get_rate_ic(eng_rf, r3d)
 
             # Apply EBL absorbtion
@@ -1346,7 +1359,8 @@ class Observables(object):
             # Case of cylindrical integral
             if type_integral == 'cylindrical':
                 # Compute integral over l.o.s.
-                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit, NptPd=self._Npt_per_decade_integ, unit=True)
+                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit,
+                                                    NptPd=self._Npt_per_decade_integ, unit=True)
                 dN_dVdt_proj = model_tools.los_integration_1dfunc(dN_dVdt, r3d, radius, los)
                 dN_dVdt_proj[radius > self._R_truncation] = 0
 
@@ -1371,6 +1385,7 @@ class Observables(object):
     #==================================================
     # Compute IC map
     #==================================================
+    
     def get_ic_map(self, Emin=None, Emax=None,
                    Rmin_los=None, NR500_los=5.0,
                    Rmin=None, Rmax=None,
@@ -1409,7 +1424,8 @@ class Observables(object):
         ra_map, dec_map = map_tools.get_radec_map(header)
 
         # Get a cluster distance map (in deg)
-        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'), self._coord.icrs.dec.to_value('deg'))
+        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'),
+                                         self._coord.icrs.dec.to_value('deg'))
         
         # Define the radius used fo computing the profile
         theta_max = np.amax(dist_map) # maximum angle from the cluster
@@ -1523,7 +1539,6 @@ class Observables(object):
             return ic_map
 
     
-
     #==================================================
     # Compute synchrotron spectrum
     #==================================================
@@ -1591,10 +1606,12 @@ class Observables(object):
             Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)
             Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
             r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             r2d = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
             dN_dEdVdt = self.get_rate_synchrotron(energy_rf, r3d)
-            dN_dEdt = model_tools.cylindrical_integration(dN_dEdVdt, energy, r3d, r2d, los, Rtrunc=self._R_truncation)
+            dN_dEdt = model_tools.cylindrical_integration(dN_dEdVdt, energy, r3d, r2d, los,
+                                                          Rtrunc=self._R_truncation)
             
         # From intrinsic luminosity to flux
         dN_dEdSdt = dN_dEdt / (4*np.pi * self._D_lum**2)
@@ -1623,6 +1640,7 @@ class Observables(object):
 
         Outputs
         ----------
+        - radius (quantity): the projected 2d radius in unit of kpc
         - sed (np.ndarray) : the spectrum in units of Jy/sr
 
         """
@@ -1647,7 +1665,8 @@ class Observables(object):
         Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)        
         Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
         r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                         NptPd=self._Npt_per_decade_integ, unit=True)
         dN_dVdt_E = self.get_rate_synchrotron(eng0_rf, r3d).flatten()
 
         # Compute integral over l.o.s.
@@ -1715,9 +1734,9 @@ class Observables(object):
 
         #----- Case of scalar quantities
         if type(Rmax.value) == float or type(Rmax.value) == np.float64:
-
             freq0, flux = self.get_synchrotron_spectrum(freq0, Rmin=Rmin, Rmax=Rmax,
-                                                        type_integral=type_integral, Rmin_los=Rmin_los, NR500_los=NR500_los, Cframe=Cframe)
+                                                        type_integral=type_integral, Rmin_los=Rmin_los,
+                                                        NR500_los=NR500_los, Cframe=Cframe)
         
         #----- Case of radius array (need to use dN/dVdEdt and not get_profile because spherical flux)
         if type(Rmax.value) == np.ndarray:
@@ -1735,7 +1754,8 @@ class Observables(object):
                 Rmax3d = np.sqrt((NR500_los*self._R500)**2 + (np.amax(Rmax.value)*Rmax.unit)**2)*1.1        
                 Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)*0.9
             r3d = model_tools.sampling_array(Rmin3d, Rmax3d, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             dN_dVdt_E = self.get_rate_synchrotron(eng0_rf, r3d).flatten()
 
             # Define output
@@ -1753,7 +1773,8 @@ class Observables(object):
             # Case of cylindrical integral
             if type_integral == 'cylindrical':
                 # Compute integral over l.o.s.
-                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit, NptPd=self._Npt_per_decade_integ, unit=True)
+                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit,
+                                                    NptPd=self._Npt_per_decade_integ, unit=True)
                 dN_dVdt_E_proj = model_tools.los_integration_1dfunc(dN_dVdt_E, r3d, radius, los)
                 dN_dVdt_E_proj[radius > self._R_truncation] = 0
 
@@ -1807,7 +1828,8 @@ class Observables(object):
         ra_map, dec_map = map_tools.get_radec_map(header)
 
         # Get a cluster distance map (in deg)
-        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'), self._coord.icrs.dec.to_value('deg'))
+        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'),
+                                         self._coord.icrs.dec.to_value('deg'))
         
         # Define the radius used fo computing the profile
         theta_max = np.amax(dist_map) # maximum angle from the cluster
@@ -1839,7 +1861,8 @@ class Observables(object):
                     Rmax = NR500_los*self._R500
             if Rmin is None:
                 Rmin = self._Rmin
-            flux = self.get_synchrotron_flux(Rmin=Rmin, Rmax=Rmax, type_integral='cylindrical', NR500_los=NR500_los, freq0=freq0, Cframe=Cframe)
+            flux = self.get_synchrotron_flux(Rmin=Rmin, Rmax=Rmax, type_integral='cylindrical',
+                                             NR500_los=NR500_los, freq0=freq0, Cframe=Cframe)
             synchrotron_map = synchrotron_map / flux
             synchrotron_map = synchrotron_map.to('sr-1')
 
@@ -1968,16 +1991,19 @@ class Observables(object):
             Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)
             Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
             r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             r2d = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
             dE_dtdVdfdO_f = self.get_rate_sz(frequency, r3d, Compton_only=Compton_only)
-            dE_dtdfdO_f = model_tools.cylindrical_integration(dE_dtdVdfdO_f, frequency, r3d, r2d, los, Rtrunc=self._R_truncation)
+            dE_dtdfdO_f = model_tools.cylindrical_integration(dE_dtdVdfdO_f, frequency, r3d, r2d, los,
+                                                              Rtrunc=self._R_truncation)
         
         # return
         if Compton_only:
             output = dE_dtdfdO_f.to('kpc2')
         else:
-            dE_dtdf_f = dE_dtdfdO_f / self._D_ang**2 * u.sr # This is because for SZ we want \int S_SZ dOmega, not \int S_SZ dS
+            # Below is because for SZ we want \int S_SZ dOmega, not \int S_SZ dS
+            dE_dtdf_f = dE_dtdfdO_f / self._D_ang**2 * u.sr 
             output = dE_dtdf_f.to('Jy')
                         
         return frequency, output
@@ -2010,7 +2036,7 @@ class Observables(object):
 
         Note
         ----------
-        The pressure profile is truncated at R500 along the line-of-sight.
+        The pressure profile is truncated at N R500 along the line-of-sight.
 
         """
         
@@ -2027,7 +2053,8 @@ class Observables(object):
         Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)        
         Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
         r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ,
+                                         unit=True)
         dE_dtdVdfdO_f = self.get_rate_sz(freq0, r3d, Compton_only=Compton_only).flatten() 
 
         # Compute integral over l.o.s.
@@ -2094,7 +2121,8 @@ class Observables(object):
         #----- Case of scalar quantities
         if type(Rmax.value) == float or type(Rmax.value) == np.float64:
                 freq0, flux = self.get_sz_spectrum(freq0, Compton_only=Compton_only, Rmin=Rmin, Rmax=Rmax,
-                                                   type_integral=type_integral, Rmin_los=Rmin_los, NR500_los=NR500_los)
+                                                   type_integral=type_integral, Rmin_los=Rmin_los,
+                                                   NR500_los=NR500_los)
         
         #----- Case of radius array (need to use dN/dVdEdt and not get_profile because spherical flux)
         elif type(Rmax.value) == np.ndarray:
@@ -2106,7 +2134,8 @@ class Observables(object):
                 Rmax3d = np.sqrt((NR500_los*self._R500)**2 + (np.amax(Rmax.value)*Rmax.unit)**2)*1.1        
                 Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)*0.9
             r3d = model_tools.sampling_array(Rmin3d, Rmax3d, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
 
             # Increase numerical precision by adding a point at R_truncation
             if np.amax(r3d) > self._R_truncation:
@@ -2128,7 +2157,8 @@ class Observables(object):
             itpl = interpolate.interp1d(r3d.to_value('kpc'), dE_dtdVdfdO_f.value, kind='linear')
             if type_integral == 'spherical':
                 for i in range(len(Rmax)):
-                    Rmax_i = np.amin([Rmax[i].to_value('kpc'), self._R_truncation.to_value('kpc')])*u.kpc # Avoid ringing from integration
+                    # Avoid ringing from integration
+                    Rmax_i = np.amin([Rmax[i].to_value('kpc'), self._R_truncation.to_value('kpc')])*u.kpc
                     rad_i = model_tools.sampling_array(Rmin, Rmax_i, NptPd=self._Npt_per_decade_integ, unit=True)
                     dE_dtdVdfdO_f_i = itpl(rad_i.to_value('kpc'))*dE_dtdVdfdO_f.unit
                     if Compton_only:
@@ -2139,14 +2169,16 @@ class Observables(object):
             # Case of cylindrical integral
             if type_integral == 'cylindrical':
                 # Compute integral over l.o.s.
-                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit, NptPd=self._Npt_per_decade_integ, unit=True)
+                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit,
+                                                    NptPd=self._Npt_per_decade_integ, unit=True)
                 dE_dtdVdfdO_f_proj = model_tools.los_integration_1dfunc(dE_dtdVdfdO_f, r3d, radius, los)
                 dE_dtdVdfdO_f_proj[radius > self._R_truncation] = 0
                 
                 itpl = interpolate.interp1d(radius.to_value('kpc'), dE_dtdVdfdO_f_proj.value, kind='linear')
-                
+
+                # Avoid ringing from integration
                 for i in range(len(Rmax)):
-                    Rmax_i = np.amin([Rmax[i].to_value('kpc'), self._R_truncation.to_value('kpc')])*u.kpc # Avoid ringing from integration
+                    Rmax_i = np.amin([Rmax[i].to_value('kpc'), self._R_truncation.to_value('kpc')])*u.kpc 
                     rad_i = model_tools.sampling_array(Rmin, Rmax_i, NptPd=self._Npt_per_decade_integ, unit=True)
                     dE_dtdVdfdO_f_proj_i = itpl(rad_i.value)*dE_dtdVdfdO_f_proj.unit
                     if Compton_only:
@@ -2206,7 +2238,8 @@ class Observables(object):
         ra_map, dec_map = map_tools.get_radec_map(header)
 
         # Get a cluster distance map (in deg)
-        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'), self._coord.icrs.dec.to_value('deg'))
+        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'),
+                                         self._coord.icrs.dec.to_value('deg'))
         
         # Define the radius used fo computing the profile
         theta_max = np.amax(dist_map) # maximum angle from the cluster
@@ -2378,8 +2411,8 @@ class Observables(object):
             Rmin_los = self._Rmin
 
         # Get useful quantity
-        mu_gas, mu_e, mu_p, mu_alpha = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
-                                                                            Z=self._metallicity_sol*self._abundance)
+        mu_gas,mu_e,mu_p,mu_alpha = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
+                                                                         Z=self._metallicity_sol*self._abundance)
         
         # Get a mean temperature
         if type_integral == 'spherical':
@@ -2393,7 +2426,8 @@ class Observables(object):
             Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)
             Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
             r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             r2d = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
             rad, temperature = self.get_temperature_gas_profile(r3d)
             temperature[temperature/temperature != 1] = 0
@@ -2494,7 +2528,8 @@ class Observables(object):
         Rmax3d = np.sqrt((NR500_los*self._R500)**2 + Rmax**2)        
         Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)
         r3d = model_tools.sampling_array(Rmin3d*0.9, Rmax3d*1.1, NptPd=self._Npt_per_decade_integ, unit=True)
-        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+        los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                         NptPd=self._Npt_per_decade_integ, unit=True)
         dN_dVdt = self.get_rate_xray(r3d, output_type=output_type, Cframe=Cframe).flatten()
         
         # Compute integral over l.o.s.
@@ -2592,7 +2627,8 @@ class Observables(object):
                 Rmax3d = np.sqrt((NR500_los*self._R500)**2 + (np.amax(Rmax.value)*Rmax.unit)**2)*1.1        
                 Rmin3d = np.sqrt(Rmin_los**2 + Rmin**2)*0.9
             r3d = model_tools.sampling_array(Rmin3d, Rmax3d, NptPd=self._Npt_per_decade_integ, unit=True)
-            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500, NptPd=self._Npt_per_decade_integ, unit=True)
+            los = model_tools.sampling_array(Rmin_los, NR500_los*self._R500,
+                                             NptPd=self._Npt_per_decade_integ, unit=True)
             dN_dVdt = self.get_rate_xray(r3d, output_type=output_type, Cframe=Cframe).flatten()
             
             # Define output
@@ -2615,7 +2651,8 @@ class Observables(object):
             # Case of cylindrical integral
             if type_integral == 'cylindrical':
                 # Compute integral over l.o.s.
-                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit, NptPd=self._Npt_per_decade_integ, unit=True)
+                radius = model_tools.sampling_array(Rmin, np.amax(Rmax.value)*Rmax.unit,
+                                                    NptPd=self._Npt_per_decade_integ, unit=True)
                 dN_dVdt_proj = model_tools.los_integration_1dfunc(dN_dVdt, r3d, radius, los)
                 dN_dVdt_proj[radius > self._R_truncation] = 0
 
@@ -2687,7 +2724,8 @@ class Observables(object):
         ra_map, dec_map = map_tools.get_radec_map(header)
 
         # Get a cluster distance map (in deg)
-        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'), self._coord.icrs.dec.to_value('deg'))
+        dist_map = map_tools.greatcircle(ra_map, dec_map, self._coord.icrs.ra.to_value('deg'),
+                                         self._coord.icrs.dec.to_value('deg'))
         
         # Define the radius used fo computing the profile
         theta_max = np.amax(dist_map) # maximum angle from the cluster
@@ -2700,7 +2738,8 @@ class Observables(object):
         radius = model_tools.sampling_array(rmin, rmax, NptPd=self._Npt_per_decade_integ, unit=True)
         
         # Project the integrand
-        r_proj, profile = self.get_xray_profile(radius, Rmin_los=Rmin_los, NR500_los=NR500_los, output_type=output_type, Cframe=Cframe)
+        r_proj, profile = self.get_xray_profile(radius, Rmin_los=Rmin_los, NR500_los=NR500_los,
+                                                output_type=output_type, Cframe=Cframe)
 
         # Convert to angle and interpolate onto a map
         theta_proj = (r_proj/self._D_ang).to_value('')*180.0/np.pi   # degrees
@@ -2718,7 +2757,8 @@ class Observables(object):
                     Rmax = NR500_los*self._R500
             if Rmin is None:
                 Rmin = self._Rmin
-            flux = self.get_xray_flux(Rmin=Rmin, Rmax=Rmax, type_integral='cylindrical', NR500_los=NR500_los, output_type=output_type, Cframe=Cframe)
+            flux = self.get_xray_flux(Rmin=Rmin, Rmax=Rmax, type_integral='cylindrical',
+                                      NR500_los=NR500_los, output_type=output_type, Cframe=Cframe)
             xray_map = xray_map / flux
             xray_map = xray_map.to('sr-1')
         else:
