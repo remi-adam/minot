@@ -510,11 +510,14 @@ class Modpar(object):
         
         Parameters
         ----------
-        - pressure_model (str): available models are 'A10UPP' (Universal Pressure Profile from 
-        Arnaud et al. 2010), 'A10CC' (Cool-Core Profile from Arnaud et al. 2010), 'A10MD' 
-        (Morphologically-Disturbed Profile from Arnaud et al. 2010), or 'P13UPP' (Planck 
-        Intermediate Paper V (2013) Universal Pressure Profile).
-
+        - pressure_model (str): available models are 
+            'A10UPP' (Universal Pressure Profile from Arnaud et al. 2010)
+            'A10CC' (Cool-Core Profile from Arnaud et al. 2010)
+            'A10MD' (Morphologically-Disturbed Profile from Arnaud et al. 2010)
+            'P13UPP' (Planck Intermediate Paper V (2013) Universal Pressure Profile)
+            'G19UPP' (Ghirardini et al 2019, all clusters)
+            'G19CC' (Ghirardini et al 2019, cool-core clusters)
+            'G19MD' (Ghirardini et al 2019, morphologically disturbed clusters)
         """
 
         # Arnaud et al. (2010) : Universal Pressure Profile parameters
@@ -537,12 +540,36 @@ class Modpar(object):
             if not self._silent: print('Setting gNFW Planck coll. (2013) UPP.')
             pppar = [6.410, 1.810, 0.3100, 1.3300, 4.1300]
 
+        # Ghirardini (2019) : Universal Pressure Profile parameters
+        elif pressure_model == 'G19UPP':
+            if not self._silent: print('Setting gNFW Ghirardini (2019) UPP.')
+            pppar = [5.68, 1.49, 0.43, 1.33, 4.40]
+
+        # Ghirardini (2019) : Universal Pressure Profile parameters
+        elif pressure_model == 'G19CC':
+            if not self._silent: print('Setting gNFW Ghirardini (2019) CC.')
+            pppar = [6.03, 1.68, 0.51, 1.33, 4.37]
+
+            # Ghirardini (2019) : Universal Pressure Profile parameters
+        elif pressure_model == 'G19MD':
+            if not self._silent: print('Setting gNFW Ghirardini (2019) MD.')
+            pppar = [7.96, 1.79, 0.29, 1.33, 4.05]
+
         # No other profiles available
         else:
-            raise ValueError('Pressure profile requested model not available. Use A10UPP, A10CC, A10MD or P13UPP.')
+            raise ValueError('Pressure profile requested model not available. Use A10UPP, A10CC, A10MD, P13UPP, G19UPP, G19CC, or G19MD.')
 
         # Compute the normalization
-        Pnorm = cluster_global.gNFW_normalization(self._redshift, self._M500.to_value('Msun'), cosmo=self._cosmo)
+        if pressure_model in ['A10UPP', 'A10CC', 'A10MD', 'P13UPP']:
+            Pnorm = cluster_global.gNFW_normalization(self._redshift, self._M500.to_value('Msun'),
+                                                      cosmo=self._cosmo)
+        if pressure_model in ['G19UPP', 'G19CC', 'G19MD']:
+            E_z   = self._cosmo.efunc(self._redshift)
+            h70   = self._cosmo.H0.value/70.0
+            mu_g,mu_e,mu_p,mu_a = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
+                                                                       Z=self._metallicity_sol*self._abundance)
+            Pnorm = 3.426*1e-3 * (self._M500.to_value('Msun')*h70/1e15)**(2.0/3) * E_z**(8.0/3)
+            Pnorm = Pnorm * ((self._cosmo.Ob0/self._cosmo.Om0)/0.16) * (mu_g/0.6) * (mu_e/1.14)
         
         # Set the parameters accordingly
         self._pressure_gas_model = {"name": 'GNFW',
