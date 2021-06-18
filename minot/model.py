@@ -193,7 +193,7 @@ class Cluster(Admin, Modpar, Physics, Observables, Plots):
         self._Rmin = 1.0*u.kpc
         self._hse_bias = 0.2
         self._X_crp_E = {'X':0.01, 'R_norm':self._R500}
-        self._X_cre1_E = {'X':0.01, 'R_norm': self._R500}
+        self._X_cre1_E = {'X':0.0, 'R_norm': self._R500}
         self._Epmin = cluster_spectra.pp_pion_kinematic_energy_threshold() * u.GeV
         self._Epmax = 10.0 * u.PeV
         self._Eemin = (const.m_e *const.c**2).to('GeV')
@@ -526,7 +526,9 @@ class Cluster(Admin, Modpar, Physics, Observables, Plots):
         # Value check
         if value <= 0 :
             raise ValueError("Mass M500 should be larger than 0")
-
+        if value.to('Msun') < 1e10 :
+            print("Warning! Your are setting the mass to a tiny value (i.e. not the cluster regime). This may lead to issues")
+        
         # Setting parameters
         self._M500 = value
         self._R500 = cluster_global.Mdelta_to_Rdelta(self._M500.to_value('Msun'),
