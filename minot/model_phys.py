@@ -506,6 +506,7 @@ class Physics(object):
 
         Outputs
         ----------
+        - radius (quantity): the 3d radius in unit of kpc
         - Uth (quantity) : the thermal energy, in GeV
 
         """
@@ -680,7 +681,7 @@ class Physics(object):
 
         Outputs
         ----------
-        - distribution (quantity): in adu, with distribution[i_energy, i_radius]
+        - dN_dEdV (quantity): in adu, with distribution[i_energy, i_radius]
 
         """
         
@@ -869,6 +870,7 @@ class Physics(object):
 
         Outputs
         ----------
+        - radius (quantity): the physical 3d radius in units homogeneous to kpc, as a 1d array
         - density (quantity): in unit of cm-3 or GeV cm-3
 
         """
@@ -915,6 +917,7 @@ class Physics(object):
 
         Outputs
         ----------
+        - radius (quantity): the physical 3d radius in units homogeneous to kpc, as a 1d array
         - density (quantity): in unit of cm-3 or GeV cm-3
 
         """
@@ -962,6 +965,7 @@ class Physics(object):
 
         Outputs
         ----------
+        - energy (quantity) : the physical energy of CR protons
         - spectrum (quantity): in unit of GeV-1
 
         """
@@ -1008,6 +1012,7 @@ class Physics(object):
 
         Outputs
         ----------
+        - energy (quantity) : the physical energy of CR primary electrons
         - spectrum (quantity): in unit of GeV-1
 
         """   
@@ -1053,6 +1058,7 @@ class Physics(object):
 
         Outputs
         ----------
+        - radius (quantity): the physical 3d radius in units homogeneous to kpc, as a 1d array
         - x_r (np.ndarray): the profile
 
         """
@@ -1106,6 +1112,7 @@ class Physics(object):
 
         Outputs
         ----------
+        - radius (quantity): the physical 3d radius in units homogeneous to kpc, as a 1d array
         - x_r (np.ndarray): the profile
 
         """
@@ -1159,6 +1166,7 @@ class Physics(object):
 
         Outputs
         ----------
+        - radius (quantity): the physical 3d radius in units homogeneous to kpc, as a 1d array
         - x_r (np.ndarray): the profile
 
         """
@@ -1476,6 +1484,7 @@ class Physics(object):
 
         Outputs
         ----------
+        - radius (quantity): the physical 3d radius in units homogeneous to kpc, as a 1d array
         - density (quantity): in unit of cm-3 or GeV cm-3
 
         """
@@ -1519,6 +1528,7 @@ class Physics(object):
 
         Outputs
         ----------
+        - energy (quantity) : the physical energy of CR protons
         - spectrum (quantity): in unit of GeV-1
 
         """
