@@ -497,6 +497,53 @@ class Modpar(object):
                       "spectrum" : spec}
             
         return outpar
+    
+    
+    #==================================================
+    # Set a given density UDP profile
+    #==================================================
+    
+    def set_density_gas_SVM_param(self, density_model='G19UDP'):
+        """
+        Set the parameters of the density profile:
+        n0, rc, rs, alpha, beta, epsilon
+        
+        Parameters
+        ----------
+        - density_model (str): available models are 
+            'G19UPP' (Ghirardini et al 2019, all clusters)
+            'G19CC' (Ghirardini et al 2019, cool-core clusters)
+            'G19MD' (Ghirardini et al 2019, morphologically disturbed clusters)
+        """
+        
+        # Ghirardini (2019) : Universal Pressure Profile parameters
+        if density_model == 'G19UDP':
+            if not self._silent: print('Setting SVM Ghirardini (2019) UPP.')
+            dppar = [np.exp(-4.4), np.exp(-3.0), np.exp(-0.29), 0.89, 0.43, 2.86]
+            
+        # Ghirardini (2019) : Universal Pressure Profile parameters
+        elif density_model == 'G19CC':
+            if not self._silent: print('Setting SVM Ghirardini (2019) CC.')
+            dppar = [np.exp(-3.9), np.exp(-3.2) , np.exp(0.17), 0.80, 0.49, 4.67]
+
+            # Ghirardini (2019) : Universal Pressure Profile parameters
+        elif density_model == 'G19MD':
+            if not self._silent: print('Setting SVM Ghirardini (2019) MD.')
+            dppar = [np.exp(-4.9), np.exp(-2.7), np.exp(-0.51), 0.70, 0.39, 2.6]
+
+        # No other profiles available
+        else:
+            raise ValueError('Density profile requested model not available. Use G19UDP, G19CC, or G19MD.')
+
+        # Set the parameters accordingly
+        self._density_gas_model = {'name' :    'SVM', 
+                                   'n_0' :     dppar[0]*u.cm**-3 * self._cosmo.efunc(self._redshift)**2,
+                                   'r_c' :     dppar[1]*self._R500, 
+                                   'r_s' :     dppar[2]*self._R500,
+                                   'alpha' :   dppar[3],
+                                   'beta' :    dppar[4] - dppar[3]/6.0, # Because not the same def of SVM
+                                   'epsilon' : dppar[5],
+                                   'gamma' :   3.0}
 
         
     #==================================================
