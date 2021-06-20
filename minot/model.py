@@ -632,7 +632,15 @@ class Cluster(Admin, Modpar, Physics, Observables, Plots):
             test = value.to('kpc')
         except:
             raise TypeError("The radius Rmin should be a quantity homogeneous to kpc.")
-        
+
+        # Check value
+        if value.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+
+        if value.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
+
         # Set parameters
         self._Rmin = value
         

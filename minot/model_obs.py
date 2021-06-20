@@ -105,7 +105,12 @@ class Observables(object):
             Rmax = self._R500
         if Rmin_los is None:
             Rmin_los = self._Rmin
-            
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
+
         # Compute the integral
         if type_integral == 'spherical':
             rad = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
@@ -272,6 +277,11 @@ class Observables(object):
             Rmin_los = self._Rmin
         if Rmin is None:
             Rmin = self._Rmin
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
         if Rmax is None:
             Rmax = self._R500
         if Emin is None:
@@ -611,7 +621,12 @@ class Observables(object):
             Rmax = self._R500
         if Rmin_los is None:
             Rmin_los = self._Rmin
-            
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
+
         # Compute the integral
         if type_integral == 'spherical':
             rad = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
@@ -768,6 +783,11 @@ class Observables(object):
             Rmin_los = self._Rmin
         if Rmin is None:
             Rmin = self._Rmin
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
         if Rmax is None:
             Rmax = self._R500
         if Emin is None:
@@ -1104,7 +1124,12 @@ class Observables(object):
             Rmax = self._R500
         if Rmin_los is None:
             Rmin_los = self._Rmin
-            
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
+
         # Compute the integral
         if type_integral == 'spherical':
             rad = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
@@ -1268,6 +1293,11 @@ class Observables(object):
             Rmin_los = self._Rmin
         if Rmin is None:
             Rmin = self._Rmin
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
         if Rmax is None:
             Rmax = self._R500
         if Emin is None:
@@ -1594,7 +1624,12 @@ class Observables(object):
             Rmax = self._R500
         if Rmin_los is None:
             Rmin_los = self._Rmin
-            
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
+
         # Compute the integral
         if type_integral == 'spherical':
             rad = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
@@ -1731,6 +1766,11 @@ class Observables(object):
             Rmin = self._Rmin
         if Rmax is None:
             Rmax = self._R500
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
 
         #----- Case of scalar quantities
         if type(Rmax.value) == float or type(Rmax.value) == np.float64:
@@ -1979,7 +2019,12 @@ class Observables(object):
             Rmax = self._R500
         if Rmin_los is None:
             Rmin_los = self._Rmin
-            
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
+
         # Compute the integral
         if type_integral == 'spherical':
             rad = model_tools.sampling_array(Rmin, Rmax, NptPd=self._Npt_per_decade_integ, unit=True)
@@ -2117,7 +2162,12 @@ class Observables(object):
             Rmin = self._Rmin
         if Rmax is None:
             Rmax = self._R500
-        
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
+
         #----- Case of scalar quantities
         if type(Rmax.value) == float or type(Rmax.value) == np.float64:
                 freq0, flux = self.get_sz_spectrum(freq0, Compton_only=Compton_only, Rmin=Rmin, Rmax=Rmax,
@@ -2409,6 +2459,11 @@ class Observables(object):
             Rmax = self._R500
         if Rmin_los is None:
             Rmin_los = self._Rmin
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
 
         # Get useful quantity
         mu_gas,mu_e,mu_p,mu_alpha = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
@@ -2610,6 +2665,11 @@ class Observables(object):
             Rmin = self._Rmin
         if Rmax is None:
             Rmax = self._R500
+        if Rmin.to_value('kpc') <= 0:
+            raise TypeError("Rmin cannot be 0 (or less than 0) because integrations are in log space.")
+        if Rmin.to_value('kpc') < 1e-2:
+            if not self._silent: 
+                print("WARNING: the requested value of Rmin is very small. Rmin~kpc is expected")
 
         #----- Case of scalar quantities
         scalar_flag = False
