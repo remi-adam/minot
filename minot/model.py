@@ -526,7 +526,7 @@ class Cluster(Admin, Modpar, Physics, Observables, Plots):
         # Value check
         if value <= 0 :
             raise ValueError("Mass M500 should be larger than 0")
-        if value.to('Msun') < 1e10 :
+        if value.to_value('Msun') < 1e10 :
             print("Warning! Your are setting the mass to a tiny value (i.e. not the cluster regime). This may lead to issues")
         
         # Setting parameters
