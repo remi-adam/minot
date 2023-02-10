@@ -138,6 +138,32 @@ def NFW_model(r3d_kpc, norm, rs):
     
     return norm / (r3d_kpc / rs) / (1 + (r3d_kpc / rs))**2
 
+
+#===================================================
+#========== NFW model derivative
+#===================================================
+def NFW_model_derivative(r3d_kpc, norm, rs):
+    """
+    Compute the derivative of the NFW model (dP/dr)
+
+    Parameters
+    ----------
+    - r3d_kpc (kpc): array of radius
+    - norm : the normalization 
+    - rs (kpc): characteristic radius parameter
+
+    Outputs
+    --------
+    - NFW derivative model profile as a function of the input radius vector
+
+    """
+
+    t1 = -norm * (r3d_kpc / rs)**-1 * (1 + (r3d_kpc / rs))**-3
+    t2 = (3*r3d_kpc/rs + 1) / r3d_kpc
+    
+    return t1 * t2
+
+
 #===================================================
 #========== gNFW model
 #===================================================

@@ -5,10 +5,14 @@ import astropy.units as u
 import numpy as np
 from scipy import interpolate
 import warnings
+from astropy import constants as const
+from scipy.interpolate import interp1d
 
+from minot              import model_tools
 from minot.ClusterTools import cluster_global
 from minot.ClusterTools import cluster_profile
 from minot.ClusterTools import cluster_spectra
+
 
 #==================================================
 # Admin class
@@ -33,13 +37,24 @@ class Modpar(object):
     of profile models
     - _validate_spectrum_model_parameters(self, inpar, unit): dedicated to check and validate the parameters 
     of spectral models
-
-    - set_pressure_gas_gNFW_param(self, pressure_model='P13UPP'): set the gas pressure 
+    
+    - set_density_gas_universal_param(self, density_model='G19UDP'): set the density profile 
+    parameters to a universal form, as measured from litterature
+    - set_pressure_gas_universal_param(self, pressure_model='P13UPP'): set the gas pressure 
     profile parameters to the universal value from different results
+    - set_density_gas_polytropic_param(self, polytropic_model='G19'): set the gas density
+    according to polytropic relation and the pressure profile
+    - set_pressure_gas_polytropic_param(self, polytropic_model='G19'): set the gas pressure
+    according to polytropic relation and the density profile
     - set_pressure_gas_isoT_param(self, kBT): set gas pressure profile parameters so 
     that the cluster is isothermal
     - set_density_gas_isoT_param(self, kBT): set gas density profile parameters so that 
     the cluster is isothermal
+    - set_density_gas_from_mass_model(self, mass_density_model): define the density according to a 
+    mass model, the HSE and the current pressure profile
+    - set_pressure_gas_from_mass_model(self, mass_density_model): define the pressure according 
+    to a mass model, the HSE, and the current density profile
+
     - set_density_crp_isobaric_scal_param(self, scal=1.0): set CRp densitry profile 
     parameters to have isobaric scaling
     - set_density_cre1_isobaric_scal_param(self, scal=1.0): set CRe1 densitry profile 
@@ -77,7 +92,7 @@ class Modpar(object):
         """
 
         # List of available authorized models
-        model_list = ['GNFW', 'SVM', 'beta', 'doublebeta', 'User']
+        model_list = ['NFW', 'GNFW', 'SVM', 'beta', 'doublebeta', 'User']
         
         # Deal with unit
         if unit == '' or unit == None:
@@ -99,8 +114,44 @@ class Modpar(object):
             print(model_list)
             raise ValueError("The requested model is not available")
         
+        #---------- Deal with the case of NFW
+        if inpar['name'] == 'NFW':
+            # Check the content of the dictionary
+            cond1 = 'rho_0' in list(inpar.keys()) and 'r_s' in list(inpar.keys())
+
+            if not (cond1):
+                raise ValueError("The NFW model should contain: {'rho_0','r_s'}.")
+            
+            # Check units and values
+            if hasunit:
+                try:
+                    test = inpar['rho_0'].to(unit)
+                except:
+                    raise TypeError("rho_0 should be homogeneous to "+unit)
+
+            if inpar['rho_0'] < 0:
+                raise ValueError("rho_0 should be >=0")
+
+            try:
+                test = inpar['r_s'].to('kpc')
+            except:
+                raise TypeError("r_s should be homogeneous to kpc")
+                
+            if inpar['r_s'] <= 0:
+                raise ValueError("r_s should be >0")
+
+            # All good at this stage, setting parameters
+            if hasunit:
+                rho0 = inpar['rho_0'].to(unit)
+            else:
+                rho0 = inpar['rho_0']*u.adu
+                
+            outpar = {"name": 'GNFW',
+                      "rho_0" : rho0,
+                      "r_s" : inpar['r_s'].to('kpc')}
+
         #---------- Deal with the case of GNFW
-        if inpar['name'] == 'GNFW':
+        elif inpar['name'] == 'GNFW':
             # Check the content of the dictionary
             cond1 = 'P_0' in list(inpar.keys()) and 'a' in list(inpar.keys()) and 'b' in list(inpar.keys()) and 'c' in list(inpar.keys())
             cond2 = 'c500' in list(inpar.keys()) or 'r_p' in list(inpar.keys())
@@ -503,7 +554,7 @@ class Modpar(object):
     # Set a given density UDP profile
     #==================================================
     
-    def set_density_gas_SVM_param(self, density_model='G19UDP'):
+    def set_density_gas_universal_param(self, density_model='G19UDP'):
         """
         Set the parameters of the density profile:
         n0, rc, rs, alpha, beta, epsilon
@@ -514,43 +565,87 @@ class Modpar(object):
             'G19UPP' (Ghirardini et al 2019, all clusters)
             'G19CC' (Ghirardini et al 2019, cool-core clusters)
             'G19MD' (Ghirardini et al 2019, morphologically disturbed clusters)
+            'P22'   (Pratt et al. 2022), gNFW universal gas density profile
         """
         
-        # Ghirardini (2019) : Universal Pressure Profile parameters
+        # Ghirardini (2019) : Universal density Profile parameters
         if density_model == 'G19UDP':
             if not self._silent: print('Setting SVM Ghirardini (2019) UPP.')
             dppar = [np.exp(-4.4), np.exp(-3.0), np.exp(-0.29), 0.89, 0.43, 2.86]
+            gas_model = {'name' :    'SVM', 
+                         'n_0' :     dppar[0]*u.cm**-3 * self._cosmo.efunc(self._redshift)**2,
+                         'r_c' :     dppar[1]*self._R500, 
+                         'r_s' :     dppar[2]*self._R500,
+                         'alpha' :   dppar[3],
+                         'beta' :    dppar[4] - dppar[3]/6.0, # Because not the same def of SVM
+                         'epsilon' : dppar[5],
+                         'gamma' :   3.0}
             
-        # Ghirardini (2019) : Universal Pressure Profile parameters
+        # Ghirardini (2019) : Universal density Profile parameters
         elif density_model == 'G19CC':
             if not self._silent: print('Setting SVM Ghirardini (2019) CC.')
             dppar = [np.exp(-3.9), np.exp(-3.2) , np.exp(0.17), 0.80, 0.49, 4.67]
-
-            # Ghirardini (2019) : Universal Pressure Profile parameters
+            gas_model = {'name' :    'SVM', 
+                         'n_0' :     dppar[0]*u.cm**-3 * self._cosmo.efunc(self._redshift)**2,
+                         'r_c' :     dppar[1]*self._R500, 
+                         'r_s' :     dppar[2]*self._R500,
+                         'alpha' :   dppar[3],
+                         'beta' :    dppar[4] - dppar[3]/6.0, # Because not the same def of SVM
+                         'epsilon' : dppar[5],
+                         'gamma' :   3.0}
+            
+            # Ghirardini (2019) : Universal density Profile parameters
         elif density_model == 'G19MD':
             if not self._silent: print('Setting SVM Ghirardini (2019) MD.')
             dppar = [np.exp(-4.9), np.exp(-2.7), np.exp(-0.51), 0.70, 0.39, 2.6]
+            gas_model = {'name' :    'SVM', 
+                         'n_0' :     dppar[0]*u.cm**-3 * self._cosmo.efunc(self._redshift)**2,
+                         'r_c' :     dppar[1]*self._R500, 
+                         'r_s' :     dppar[2]*self._R500,
+                         'alpha' :   dppar[3],
+                         'beta' :    dppar[4] - dppar[3]/6.0, # Because not the same def of SVM
+                         'epsilon' : dppar[5],
+                         'gamma' :   3.0}
 
+            # Pratt (2022) : Universal density profile parameters (and corrigendum)
+        elif density_model == 'P22':
+            dppar = [1.20, 1/0.28, 0.42, 1.52, 3*0.78]
+
+            E_z = self._cosmo.efunc(self._redshift)
+            h70 = self._cosmo.H0.value/70.0
+            rho500 = 500*self._cosmo.critical_density(self._redshift)
+            mu_g,mu_e,mu_p,mu_a = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
+                                                                       Z=self._metallicity_sol*self._abundance)
+            A_z_M = E_z**2.09 * (self._M500.to_value('Msun')/(5e14*h70**-1))**0.22
+            Nnorm = A_z_M * dppar[0] * rho500/(mu_e*const.m_p)
+            
+            gas_model = {"name": 'GNFW',
+                         "P_0" : Nnorm.to('cm-3'),
+                         "c500": dppar[1],
+                         "r_p" : self._R500/dppar[1],
+                         "a":dppar[3],
+                         "b":dppar[4],
+                         "c":dppar[2]}
+            
         # No other profiles available
         else:
             raise ValueError('Density profile requested model not available. Use G19UDP, G19CC, or G19MD.')
 
         # Set the parameters accordingly
-        self._density_gas_model = {'name' :    'SVM', 
-                                   'n_0' :     dppar[0]*u.cm**-3 * self._cosmo.efunc(self._redshift)**2,
-                                   'r_c' :     dppar[1]*self._R500, 
-                                   'r_s' :     dppar[2]*self._R500,
-                                   'alpha' :   dppar[3],
-                                   'beta' :    dppar[4] - dppar[3]/6.0, # Because not the same def of SVM
-                                   'epsilon' : dppar[5],
-                                   'gamma' :   3.0}
+        self._density_gas_model = gas_model
 
-        
+
     #==================================================
     # Set a given pressure UPP profile
     #==================================================
-    
     def set_pressure_gas_gNFW_param(self, pressure_model='P13UPP'):
+        print('This function is now replaced by set_pressure_gas_universal_param.')
+        print('Only the name has changed, for coherence with other functions.')
+        print('Please use set_pressure_gas_universal_param.')
+        print('set_pressure_gas_gNFW_param will desappear in future versions.')
+        self.set_pressure_gas_universal_param(pressure_model=pressure_model)
+
+    def set_pressure_gas_universal_param(self, pressure_model='P13UPP'):
         """
         Set the parameters of the pressure profile:
         P0, c500 (and r_p given R500), gamma, alpha, beta
@@ -616,7 +711,11 @@ class Modpar(object):
             mu_g,mu_e,mu_p,mu_a = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
                                                                        Z=self._metallicity_sol*self._abundance)
             Pnorm = 3.426*1e-3 * (self._M500.to_value('Msun')*h70/1e15)**(2.0/3) * E_z**(8.0/3)
-            Pnorm = Pnorm * ((self._cosmo.Ob0/self._cosmo.Om0)/0.16) * (mu_g/0.6) * (mu_e/1.14)
+            try:
+                fb = self._cosmo.Ob0/self._cosmo.Om0
+            except:
+                fb = 0.16
+            Pnorm = Pnorm * (fb/0.16) * (mu_g/0.6) * (mu_e/1.14)
         
         # Set the parameters accordingly
         self._pressure_gas_model = {"name": 'GNFW',
@@ -628,6 +727,166 @@ class Modpar(object):
                                     "c":pppar[2]}
 
 
+    #==================================================
+    # Set a given pressure polytropic profile
+    #==================================================
+    
+    def set_pressure_gas_polytropic_param(self, polytropic_model='G19'):
+        """
+        Set the parameters of the pressure profile so that 
+        the cluster follows the polytropc relation, using the 
+        density as the input quantity. See
+        Ghirardini et al. (2019) for details.
+        
+        Parameters
+        ----------
+        - polytropic_model (str): model to follow
+
+        """
+
+        #---------- Get the model parameters
+        # Ghirardini et al. 2019 (see section 3 and tab 3)
+        if polytropic_model is 'G19':
+
+            E_z   = self._cosmo.efunc(self._redshift)
+            h70   = self._cosmo.H0.value/70.0
+            mu_g,mu_e,mu_p,mu_a = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
+                                                                       Z=self._metallicity_sol*self._abundance)        
+            try:
+                fb = self._cosmo.Ob0/self._cosmo.Om0
+            except:
+                fb = 0.16
+            
+            P500  = 3.426*1e-3 * (self._M500.to_value('Msun')*h70/1e15)**(2.0/3) * E_z**(8.0/3)*(fb/0.16)*(mu_g/0.6)*(mu_e/1.14)
+            P0    = np.exp(-2.94)
+            n0    = np.exp(-10.3)
+            Gamma = 1.19
+
+            constant = P500*P0 * (n0*E_z**2)**(-Gamma)*u.keV*u.cm**-3
+
+        # No other relation available
+        else:
+            raise ValueError('Only the Ghirardini et al. 2019 relation is available: polytropic_model="G19"')
+
+        #---------- Set the model parameters
+        # Get the density parameters
+        Ppar = self._density_gas_model.copy()
+
+        # Modify the parameters depending on the model
+        if self._density_gas_model['name'] == 'GNFW':
+            Ppar['P_0'] = constant * (Ppar['P_0'].to_value('cm**-3'))**Gamma
+            Ppar['b']  *= Gamma
+            Ppar['c']  *= Gamma
+            
+        elif self._density_gas_model['name'] == 'SVM':
+            Ppar['n_0'] = constant * (Ppar['n_0'].to_value('cm**-3'))**Gamma
+            Ppar['beta'] *= Gamma
+            Ppar['alpha'] *= Gamma
+            Ppar['epsilon'] *= Gamma
+            
+        elif self._density_gas_model['name'] == 'beta':
+            Ppar['n_0'] = constant * (Ppar['n_0'].to_value('cm**-3'))**Gamma
+            Ppar['beta'] *= Gamma
+            
+        elif self._density_gas_model['name'] == 'doublebeta':
+            if self._silent is False:
+                print('!!! Analytical polytropic transformation not available with doublebeta model. !!!')
+                print('!!! Definition done via a User defined model in 0.1-10000 kpc!!!')
+            rad, prof = self.get_density_gas_profile(radius=np.logspace(np.log10(self._Rmin.to_value('kpc')/5),
+                                                                         np.log10(self._R_truncation.to_value('kpc')*5),
+                                                                         1000)*u.kpc)
+            profile = constant * prof.to_value('cm-3')**Gamma
+            Ppar = {'name':'User', 'radius':rad, 'profile':profile}
+
+        elif self._density_gas_model['name'] == 'User':
+             Ppar['profile'] = constant*(Ppar['profile'].to_value('cm-3'))**Gamma
+
+        else:
+            raise ValueError('Problem with pressure model list.')
+
+        self._pressure_gas_model = Ppar
+        
+
+    #==================================================
+    # Set a given density polytropic profile
+    #==================================================
+    
+    def set_density_gas_polytropic_param(self, polytropic_model='G19'):
+        """
+        Set the parameters of the density profile so that 
+        the cluster follows the polytropc relation using the 
+        pressure as the input quantity. See
+        Ghirardini et al. (2019) for details.
+        
+        Parameters
+        ----------
+        - polytropic_model (str): model to follow
+
+        """
+
+        #---------- Get the model parameters
+        # Ghirardini et al. 2019 (see section 3 and tab 3)
+        if polytropic_model is 'G19':
+
+            E_z   = self._cosmo.efunc(self._redshift)
+            h70   = self._cosmo.H0.value/70.0
+            mu_g,mu_e,mu_p,mu_a = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
+                                                                       Z=self._metallicity_sol*self._abundance)        
+            try:
+                fb = self._cosmo.Ob0/self._cosmo.Om0
+            except:
+                fb = 0.16
+            
+            P500  = 3.426*1e-3 * (self._M500.to_value('Msun')*h70/1e15)**(2.0/3) * E_z**(8.0/3)*(fb/0.16)*(mu_g/0.6)*(mu_e/1.14)
+            P0    = np.exp(-2.94)
+            n0    = np.exp(-10.3)
+            Gamma = 1.19
+
+            constant = n0*E_z**2*(P500*P0)**(-1/Gamma)*u.cm**-3
+
+        # No other relation available
+        else:
+            raise ValueError('Only the Ghirardini et al. 2019 relation is available: polytropic_model="G19"')
+
+        #---------- Set the model parameters
+        # Get the pressure parameters
+        Ppar = self._pressure_gas_model.copy()
+
+        # Modify the parameters depending on the model
+        if self._pressure_gas_model['name'] == 'GNFW':
+            Ppar['P_0'] = constant * (Ppar['P_0'].to_value('keV cm**-3'))**(1/Gamma)
+            Ppar['b']  *= 1/Gamma
+            Ppar['c']  *= 1/Gamma
+            
+        elif self._pressure_gas_model['name'] == 'SVM':
+            Ppar['n_0'] = constant * (Ppar['n_0'].to_value('keV cm**-3'))**(1/Gamma)
+            Ppar['beta'] *= 1/Gamma
+            Ppar['alpha'] *= 1/Gamma
+            Ppar['epsilon'] *= 1/Gamma
+            
+        elif self._pressure_gas_model['name'] == 'beta':
+            Ppar['n_0'] = constant * (Ppar['n_0'].to_value('keV cm**-3'))**(1/Gamma)
+            Ppar['beta'] *= 1/Gamma
+            
+        elif self._pressure_gas_model['name'] == 'doublebeta':
+            if self._silent is False:
+                print('!!! Analytical polytropic transformation not available with doublebeta model. !!!')
+                print('!!! Definition done via a User defined model in 0.1-10000 kpc!!!')
+            rad, prof = self.get_pressure_gas_profile(radius=np.logspace(np.log10(self._Rmin.to_value('kpc')/5),
+                                                                         np.log10(self._R_truncation.to_value('kpc')*5),
+                                                                         1000)*u.kpc)
+            profile = constant * prof.to_value('keV cm-3')**(1/Gamma)
+            Ppar = {'name':'User', 'radius':rad, 'profile':profile}
+
+        elif self._pressure_gas_model['name'] == 'User':
+             Ppar['profile'] = constant*(Ppar['profile'].to_value('keV cm-3'))**(1/Gamma)
+
+        else:
+            raise ValueError('Problem with pressure model list.')
+
+        self._density_gas_model = Ppar
+        
+        
     #==================================================
     # Set a given pressure isothermal profile
     #==================================================
@@ -721,7 +980,147 @@ class Modpar(object):
 
         self._density_gas_model = Ppar
 
+
+    #==================================================
+    # Set a given gas density profile from P(r) and M_tot(r)
+    #==================================================
+    
+    def set_density_gas_from_mass_model(self, mass_density_model):
+        """
+        Set the parameters of the gas density profile using 
+        the hydrostatic equilibrium and the current pressure
+        profile.
         
+        n_e(r) = (mu m_p G)^-1 r^2 dP/dr (M_tot(<r) (1-b_HSE))^-1
+
+        Parameters
+        ----------
+        - mass_density_model (dictionary): take the form 
+        {'name':'NFW', 'rs':rs, 'rho0':rho0}, etc
+
+        """
+
+        #---------- Inputs
+        self._validate_profile_model_parameters(mass_density_model, 'Msun kpc-3')
+        
+        # Pressure profile derivative
+        rad = np.logspace(np.log10(self._Rmin.to_value('kpc')/5), np.log10(self._R_truncation.to_value('kpc')*5), 1000)*u.kpc
+        dpdr_r    = self._get_generic_profile(rad, self._pressure_gas_model, derivative=True)
+        
+        # Mean molecular weights
+        mu_gas,mu_e,mu_p,mu_alpha = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
+                                                                         Z=self._metallicity_sol*self._abundance)
+        #---------- Get the mass
+        # NFW defined mass
+        if mass_density_model['name'] is 'NFW':
+            rs = mass_density_model['r_s'].to_value('kpc')
+            Mnorm = 4*np.pi * mass_density_model['rho_0'].to_value('Msun kpc-3')
+            Mtot_r = Mnorm * rs**3 * (np.log((rs+rad.to_value('kpc'))/rs)-rad.to_value('kpc')/(rs+rad.to_value('kpc')))
+                
+        # User defined mass
+        elif mass_density_model['name'] is 'User':
+            # loglog interpolation
+            itpl = interp1d(np.log10(mass_density_model['radius'].to_value('kpc')),
+                            np.log10(mass_density_model['profile'].to_value('Msun kpc-3')),
+                            kind='linear', fill_value='extrapolate')
+
+            # Compute the mass profile
+            Mtot_r = np.zeros(len(rad))
+            for i in range(len(rad)):
+                rmin_i = np.amin([self._Rmin.to_value('kpc'), rad.to_value('kpc')[i]/5.0])*u.kpc
+                rad_i = model_tools.sampling_array(rmin_i, rad[i], NptPd=self._Npt_per_decade_integ, unit=True)
+                rho_r_i = 10**itpl(np.log10(rad_i.to_value('kpc')))
+                Mtot_r[i] = model_tools.trapz_loglog(4*np.pi*rad_i.to_value('kpc')**2*rho_r_i, rad_i.to_value('kpc'))
+        else:
+            raise ValueError('Only the NFW mass profile is implemented.')
+
+        #---------- Compute the density profile       
+        profile = -rad**2 * dpdr_r / (1-self._hse_bias) / (mu_gas*const.m_p*const.G) / (Mtot_r*u.Msun)
+        Dpar = {'name':'User', 'radius':rad, 'profile':profile.to('cm-3')}
+        
+        # Set the density model
+        self._density_gas_model = Dpar
+        
+        
+    #==================================================
+    # Set a given gas density profile from P(r) and M_tot(r)
+    #==================================================
+    
+    def set_pressure_gas_from_mass_model(self, mass_density_model):
+        """
+        Set the parameters of the gas density profile using 
+        the hydrostatic equilibrium and the current pressure
+        profile.
+        
+        P_e(r) = (mu m_p G) r^2 dP/dr (M_tot(<r) (1-b_HSE))^-1
+
+        Parameters
+        ----------
+        - mass_density_model (dictionary): take the form 
+        {'name':'NFW', 'rs':rs, 'rho0':rho0}, etc
+
+        """
+
+        #---------- Inputs
+        self._validate_profile_model_parameters(mass_density_model, 'Msun kpc-3')
+        
+        # Density profile
+        rad = np.logspace(np.log10(self._Rmin.to_value('kpc')/5),np.log10(self._R_truncation.to_value('kpc')*5),1000)*u.kpc
+        rad0, n_e_r = self.get_density_gas_profile(radius=np.logspace(np.log10(self._Rmin.to_value('kpc')/5),
+                                                                     np.log10(0.99999*self._R_truncation.to_value('kpc')),
+                                                                     1000)*u.kpc)            
+        
+        # Mean molecular weights
+        mu_gas,mu_e,mu_p,mu_alpha = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
+                                                                         Z=self._metallicity_sol*self._abundance)
+
+        #---------- Get the mass
+        # NFW defined mass
+        if mass_density_model['name'] is 'NFW':
+            rs = mass_density_model['r_s'].to_value('kpc')
+            Mnorm = 4*np.pi * mass_density_model['rho_0'].to_value('Msun kpc-3')
+            Mtot_r = Mnorm * rs**3 * (np.log((rs+rad0.to_value('kpc'))/rs)-rad0.to_value('kpc')/(rs+rad0.to_value('kpc')))
+                
+        # User defined mass
+        elif mass_density_model['name'] is 'User':
+            # loglog interpolation
+            itpl = interp1d(np.log10(mass_density_model['radius'].to_value('kpc')),
+                            np.log10(mass_density_model['profile'].to_value('Msun kpc-3')),
+                            kind='linear', fill_value='extrapolate')
+
+            # Compute the mass profile
+            Mtot_r = np.zeros(len(rad0))
+            for i in range(len(rad0)):
+                rmin_i = np.amin([self._Rmin.to_value('kpc'), rad0.to_value('kpc')[i]/5.0])*u.kpc
+                rad_i = model_tools.sampling_array(rmin_i, rad0[i], NptPd=self._Npt_per_decade_integ, unit=True)
+                rho_r_i = 10**itpl(np.log10(rad_i.to_value('kpc')))
+                Mtot_r[i] = model_tools.trapz_loglog(4*np.pi*rad_i.to_value('kpc')**2*rho_r_i, rad_i.to_value('kpc'))
+        else:
+            raise ValueError('Only the NFW mass profile is implemented.')
+
+        #---------- Compute the pressure profile
+        # Derivative
+        dPdr = -(mu_gas*const.m_p*const.G) * (1-self._hse_bias) * (Mtot_r*u.Msun) / rad0**2 * n_e_r
+        dPdr = -dPdr.to_value('keV cm-3 kpc-1') # Warning, this is now minus dP/dr
+        itpl = interp1d(np.log10(rad0.to_value('kpc')), np.log10(dPdr), kind='linear', fill_value='extrapolate')
+
+        # Integrate
+        P_e_r = np.zeros(len(rad))
+        for i in range(len(rad)):
+            if rad[i].to_value('kpc') < self._R_truncation.to_value('kpc'):
+                rad_i = model_tools.sampling_array(rad[i].to_value('kpc'), self._R_truncation.to_value('kpc'),
+                                                   NptPd=self._Npt_per_decade_integ, unit=False)
+                dPdr_i = 10**itpl(np.log10(rad_i))
+                P_e_r[i] = model_tools.trapz_loglog(dPdr_i, rad_i)
+            else:
+                P_e_r[i] = 0
+                
+        Ppar = {'name':'User', 'radius':rad, 'profile':P_e_r*u.keV*u.cm**-3}
+    
+        # Set the pressure model
+        self._pressure_gas_model = Ppar
+
+
     #==================================================
     # Set a given CRp density to isobaric profile
     #==================================================
@@ -770,10 +1169,11 @@ class Modpar(object):
              Ppar['profile'] = (Ppar['profile'].to_value('keV cm-3'))**scal * u.adu
 
         else:
-            raise ValueError('Problem with density model list.')
+            raise ValueError('Problem with pressure model list.')
 
         self._density_crp_model = Ppar
 
+        
     #==================================================
     # Set a given CRe1 density to isobaric profile
     #==================================================
@@ -822,7 +1222,7 @@ class Modpar(object):
              Ppar['profile'] = (Ppar['profile'].to_value('keV cm-3'))**scal * u.adu
             
         else:
-            raise ValueError('Problem with density model list.')
+            raise ValueError('Problem with pressure model list.')
 
         self._density_cre1_model = Ppar
 
@@ -1105,7 +1505,7 @@ class Modpar(object):
 
         """
 
-        model_list = ['GNFW', 'SVM', 'beta', 'doublebeta', 'User']
+        model_list = ['NFW', 'GNFW', 'SVM', 'beta', 'doublebeta', 'User']
 
         if not model['name'] in model_list:
             print('The profile model can :')
@@ -1115,7 +1515,19 @@ class Modpar(object):
         r3d_kpc = radius.to_value('kpc')
 
         #---------- Case of GNFW profile
-        if model['name'] == 'GNFW':
+        if model['name'] == 'NFW':
+            unit = model["rho_0"].unit
+            
+            rho0 = model["rho_0"].to_value(unit)
+            rs = model["r_s"].to_value('kpc')
+
+            if derivative:
+                prof_r = cluster_profile.NFW_model_derivative(r3d_kpc, rho0, rs) * unit*u.Unit('kpc-1')
+            else:
+                prof_r = cluster_profile.NFW_model(r3d_kpc, rho0, rs)*unit
+
+        #---------- Case of GNFW profile
+        elif model['name'] == 'GNFW':
             unit = model["P_0"].unit
             
             P0 = model["P_0"].to_value(unit)

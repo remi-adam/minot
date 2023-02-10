@@ -251,7 +251,7 @@ def profile2map(profile_y, profile_r, map_r):
 #===================================================
 #========== Extract ROI from Healpix maps
 #===================================================
-def roi_extract_healpix(file_name, ra, dec, reso_deg, FoV_deg, save_file=None, visu=True):
+def roi_extract_healpix(file_name, ra, dec, reso_deg, FoV_deg, save_file=None, visu=True, field=0):
     """
     Extract a sky patch on the sky given a healpix fullsky map
 
@@ -264,6 +264,7 @@ def roi_extract_healpix(file_name, ra, dec, reso_deg, FoV_deg, save_file=None, v
     - FoV_deg (deg): the field of view of the extracted map as 2d list (x,y)
     - save_file (str): the name of the file where to save the map
     - visu (bool): visualize the map
+    - field (int): the field where to extract the healpix map
 
     Outputs
     --------
@@ -286,7 +287,7 @@ def roi_extract_healpix(file_name, ra, dec, reso_deg, FoV_deg, save_file=None, v
     head_roi = define_std_header(ra, dec, FoV_x, FoV_y, reso_deg) 
     
     #======== Read the healpix map
-    image_hp, head_hp = healpy.fitsfunc.read_map(file_name, field=0, hdu=1, h=True, verbose=False)
+    image_hp, head_hp = healpy.fitsfunc.read_map(file_name, field=field, hdu=1, h=True, verbose=False)
 
     #======== Color map
     cmap = copy.copy(mpl.cm.get_cmap("viridis"))

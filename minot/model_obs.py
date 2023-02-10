@@ -504,23 +504,19 @@ class Observables(object):
                         model='Kafexhiu2014',
                         maplonlat=None, output_lonlat=False):
         """
-        Compute the gamma ray map healpix format.
+        Compute the gamma ray map (RING) healpix format.
         
         Parameters
         ----------
         - nside (int): healpix Nside
         - Emin (quantity): the lower bound for gamma ray energy integration.
-        Has no effect if Normalized is True
         - Emax (quantity): the upper bound for gamma ray energy integration
-        Has no effect if Normalized is True
         - Rmin_los (Quantity): the radius at which line of sight integration starts
         - NR500_los (float): the integration will stop at NR500_los x R500
         - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
         (default is 1kpc, Rtruncation) for getting the normlization flux.
-        Has no effect if Normalized is False
         - Energy_density (bool): if True, then the energy density is computed. Otherwise, 
         the number density is computed.
-        Has no effect if Normalized is True
         - Cframe (bool): computation assumes that we are in the cluster frame (no redshift effect)
         - model (str): change the reference model to 'Kafexhiu2014' or 'Kelner2006'
         - maplonlat (2d tuple of np.array): healpix maps of galactic longitude and latitude
@@ -529,8 +525,8 @@ class Observables(object):
     
         Outputs
         ----------
-        gamma_map (np.ndarray) : the map in units of sr-1 or brightness
-
+        - gamma_map (np.ndarray) : the map in units of sr-1 or brightness
+        - if output_lonlat is True, maplon and maplat are also returned
         """
 
         # Get a healpy radius map
@@ -1000,36 +996,32 @@ class Observables(object):
     def get_neutrino_hpmap(self, nside=2048, Emin=None, Emax=None,
                            Rmin_los=None, NR500_los=5.0,
                            Rmin=None, Rmax=None,
-                           Energy_density=False, Normalize=False,
+                           Energy_density=False,
                            flavor='all',
                            Cframe=False,
                            maplonlat=None, output_lonlat=False):
         """
-        Compute the neutrino map in healpix format.
+        Compute the neutrino map in (RING) healpix format.
         
         Parameters
         ----------
         - nside (int): healpix Nside
         - Emin (quantity): the lower bound for nu energy integration.
-        Has no effect if Normalized is True
         - Emax (quantity): the upper bound for nu energy integration
-        Has no effect if Normalized is True
         - Rmin_los (Quantity): the radius at which line of sight integration starts
         - NR500_los (float): the integration will stop at NR500_los x R500
         - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
         (default is 1kpc, Rtruncation) for getting the normlization flux.
-        Has no effect if Normalized is False
         - Energy_density (bool): if True, then the energy density is computed. Otherwise, 
         the number density is computed.
-        Has no effect if Normalized is True
         - flavor (str): either 'all', 'numu' or 'nue'
         - Cframe (bool): computation assumes that we are in the cluster frame (no redshift effect)
         - output_lonlat (bool): use this keyword to also return the lon and lat maps 
 
         Outputs
         ----------
-        neutrino_map (np.ndarray) : the map in units of sr-1 or brightness
-
+        - neutrino_map (np.ndarray) : the map in units of sr-1 or brightness
+        - if output_lonlat is True, maplon and maplat are also returned
         """
 
         # Get a healpy radius map
@@ -1512,7 +1504,7 @@ class Observables(object):
                      Cframe=False,
                      maplonlat=None, output_lonlat=False):
         """
-        Compute the inverse Compton map in the healpix format
+        Compute the inverse Compton map in the (RING) healpix format
         
         Parameters
         ----------
@@ -1523,10 +1515,8 @@ class Observables(object):
         - NR500_los (float): the integration will stop at NR500_los x R500
         - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
         (default is 1kpc, Rtruncation) for getting the normlization flux.
-        Has no effect if Normalized is False
         - Energy_density (bool): if True, then the energy density is computed. Otherwise, 
         the number density is computed.
-        Has no effect if Normalized is True
         - Cframe (bool): computation assumes that we are in the cluster frame (no redshift effect)
         - maplonlat (2d tuple of np.array): healpix maps of galactic longitude and latitude
         which can be provided to save time in case of repeated computation
@@ -1534,7 +1524,8 @@ class Observables(object):
     
         Outputs
         ----------
-        ic_map (np.ndarray) : the map in units of sr-1 or brightness
+        - ic_map (np.ndarray) : the map in units of sr-1 or brightness
+        - if output_lonlat is True, maplon and maplat are also returned
 
         """
         
@@ -1923,7 +1914,7 @@ class Observables(object):
                               Cframe=False,
                               maplonlat=None, output_lonlat=False):
         """
-        Compute the synchrotron map in the healpix format.
+        Compute the synchrotron map in the (RING) healpix format.
         
         Parameters
         ----------
@@ -1933,7 +1924,6 @@ class Observables(object):
         - NR500_los (float): the integration will stop at NR500_los x R500
         - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
         (default is 1kpc, Rtruncation) for getting the normlization flux.
-        Has no effect if Normalized is False
         - Cframe (bool): computation assumes that we are in the cluster frame (no redshift effect)
         - maplonlat (2d tuple of np.array): healpix maps of galactic longitude and latitude
         which can be provided to save time in case of repeated computation
@@ -2347,27 +2337,26 @@ class Observables(object):
                      Rmin=None, Rmax=None, 
                      maplonlat=None, output_lonlat=False):
         """
-        Compute the SZ map projected onto a healpix map.
+        Compute the SZ map projected onto a (RING) healpix map.
         
         Parameters
         ----------
         - nside (int): healpix Nside
         - freq0 (quantity): the frequency at wich we work
-        Has no effect if Normalized is True
         - Compton_only (bool): Output the Compton parameter instead of the spectrum. In the case of
         Compton only, the frequency input does not matter 
         - Rmin_los (Quantity): the radius at which line of sight integration starts
         - NR500_los (float): the integration will stop at NR500_los x R500
         - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
         (default is 1kpc, Rtruncation) for getting the normlization flux.
-        Has no effect if Normalized is False
         - maplonlat (2d tuple of np.array): healpix maps of galactic longitude and latitude
         which can be provided to save time in case of repeated computation
         - output_lonlat (bool): use this keyword to also return the lon and lat maps 
         
         Outputs
         ----------
-        sz_map (healpix map) : the map in units of brightness, or Compton
+        - sz_map (healpix map) : the map in units of brightness, or Compton
+        - if output_lonlat is True, maplon and maplat are also returned
         """
         
         # Get a healpy radius map
@@ -2843,7 +2832,7 @@ class Observables(object):
                        Cframe=False,
                        maplonlat=None, output_lonlat=False):
         """
-        Compute the Xray map projected onto a healpix format.
+        Compute the Xray map projected onto a (RING) healpix format.
         
         Parameters
         ----------
@@ -2852,7 +2841,6 @@ class Observables(object):
         - NR500_los (float): the integration will stop at NR500_los x R500
         - Rmin, Rmax (quantity): the radius within with the spectrum is computed 
         (default is 1kpc, Rtruncation) for getting the normlization flux.
-        Has no effect if Normalized is False
         - output_type (str): type of output
         S == energy counts in erg/s/cm^2/sr
         C == counts in ph/s/cm^2/sr
@@ -2864,8 +2852,8 @@ class Observables(object):
         
         Outputs
         ----------
-        xray_map (np.ndarray) : the map in units of sr-1 or brightness
-        
+        - xray_map (np.ndarray) : the map in units of sr-1 or brightness
+        - if output_lonlat is True, maplon and maplat are also returned
         """
         
         # Check output type
