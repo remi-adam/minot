@@ -16,8 +16,8 @@ setup(
     long_description=long_description,  #this is the readme 
     long_description_content_type='text/markdown',
     url='https://github.com/remi-adam/minot',
-    author='Remi Adam and Hazal Goksu',
-    author_email='remi.adam@llr.in2p3.fr',
+    author='Remi Adam',
+    author_email='remi.adam@oca.eu',
     license='BSD',
     # See https://pypi.org/classifiers/
     classifiers=[
