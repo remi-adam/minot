@@ -982,6 +982,74 @@ class Modpar(object):
 
 
     #==================================================
+    # Set a given pressure profile according to temperature
+    #==================================================
+    
+    def set_pressure_gas_from_temperature_model(self, kBT_model):
+        """
+        Set the pressure profile so that 
+        the cluster is defined via the density and the 
+        temperature profiles.
+        This function always uses a User defined model
+        (i.e. implying interpolation) to define the pressure.
+        
+        Parameters
+        ----------
+        - kBT_model (quantity): temperature profile
+
+        """
+
+        #---------- Inputs validation
+        self._validate_profile_model_parameters(kBT_model, 'keV')
+
+        #---------- Extract kBT_r and n_r
+        radius = np.logspace(np.log10(self._Rmin.to_value('kpc')/5), np.log10(self._R_truncation.to_value('kpc')*5), 1000)*u.kpc
+        kBT_r = self._get_generic_profile(radius, kBT_model, derivative=False)
+        rad0, n_e_r = self.get_density_gas_profile(radius)       
+        
+        #---------- Compute the pressure profile       
+        profile = n_e_profile * kBT_profile
+        Ppar = {'name':'User', 'radius':radius, 'profile':profile.to('keV cm-3')}
+        
+        #---------- Set the density model
+        self._pressure_gas_model = Ppar
+
+
+    #==================================================
+    # Set a given density profile according to temperature
+    #==================================================
+    
+    def set_density_gas_from_temperature_model(self, kBT_model):
+        """
+        Set the density profile so that 
+        the cluster is defined via the pressure and the 
+        temperature profiles.
+        This function always uses a User defined model
+        (i.e. implying interpolation) to define the density.
+        
+        Parameters
+        ----------
+        - kBT_model (quantity): temperature profile
+
+        """
+
+        #---------- Inputs
+        self._validate_profile_model_parameters(kBT_model, 'keV')
+        
+        #---------- Extract kBT_r and P_r
+        radius = np.logspace(np.log10(self._Rmin.to_value('kpc')/5), np.log10(self._R_truncation.to_value('kpc')*5), 1000)*u.kpc
+        kBT_r = self._get_generic_profile(radius, kBT_model, derivative=False)
+        rad0, p_e_r = self.get_pressure_gas_profile(radius)       
+        
+        #---------- Compute the pressure profile       
+        profile = p_e_r / kBT_r
+        Dpar = {'name':'User', 'radius':radius, 'profile':profile.to('cm-3')}        
+
+        #---------- Set the density model
+        self._density_gas_model = Dpar
+
+
+    #==================================================
     # Set a given gas density profile from P(r) and M_tot(r)
     #==================================================
     
