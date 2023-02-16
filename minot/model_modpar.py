@@ -113,43 +113,90 @@ class Modpar(object):
             print('The profile model can be:')
             print(model_list)
             raise ValueError("The requested model is not available")
-        
+
         #---------- Deal with the case of NFW
         if inpar['name'] == 'NFW':
             # Check the content of the dictionary
-            cond1 = 'rho_0' in list(inpar.keys()) and 'r_s' in list(inpar.keys())
+            cond1a = 'r_s' in list(inpar.keys()) and 'rho_0' in list(inpar.keys())
+            cond1b = not('M' in list(inpar.keys()) or 'c' in list(inpar.keys()) or 'delta' in list(inpar.keys()))            
+            cond2a = 'M' in list(inpar.keys()) and 'c' in list(inpar.keys()) and 'delta' in list(inpar.keys())
+            cond2b = not('rho_0' in list(inpar.keys()) or 'r_s' in list(inpar.keys()))
 
-            if not (cond1):
-                raise ValueError("The NFW model should contain: {'rho_0','r_s'}.")
-            
-            # Check units and values
-            if hasunit:
-                try:
-                    test = inpar['rho_0'].to(unit)
-                except:
-                    raise TypeError("rho_0 should be homogeneous to "+unit)
-
-            if inpar['rho_0'] < 0:
-                raise ValueError("rho_0 should be >=0")
-
-            try:
-                test = inpar['r_s'].to('kpc')
-            except:
-                raise TypeError("r_s should be homogeneous to kpc")
-                
-            if inpar['r_s'] <= 0:
-                raise ValueError("r_s should be >0")
-
-            # All good at this stage, setting parameters
-            if hasunit:
-                rho0 = inpar['rho_0'].to(unit)
+            if (cond1a and cond1b):
+                case1 = True
             else:
-                rho0 = inpar['rho_0']*u.adu
-                
-            outpar = {"name": 'GNFW',
-                      "rho_0" : rho0,
-                      "r_s" : inpar['r_s'].to('kpc')}
+                case1 = False
+            if (cond2a and cond2b):
+                case2 = True
+            else:
+                case2 = False
+            
+            if not ((cond1a and cond1b) or (cond2a and cond2b)):
+                raise ValueError("The NFW model should contain: {'rho_0', 'r_s'} or {'M', 'c', 'delta'} .")
 
+            # Case of generic profile with rho0 and rs
+            if case1:
+                # Check units and values
+                if hasunit:
+                    try:
+                        test = inpar['rho_0'].to(unit)
+                    except:
+                        raise TypeError("rho_0 should be homogeneous to "+unit)
+                
+                if inpar['rho_0'] < 0:
+                    raise ValueError("rho_0 should be >=0")
+                
+                try:
+                    test = inpar['r_s'].to('kpc')
+                except:
+                    raise TypeError("r_s should be homogeneous to kpc")
+                    
+                if inpar['r_s'] <= 0:
+                    raise ValueError("r_s should be >0")
+                
+                # All good at this stage, setting parameters
+                if hasunit:
+                    rho0 = inpar['rho_0'].to(unit)
+                else:
+                    rho0 = inpar['rho_0']*u.adu
+
+                r_s = inpar['r_s'].to('kpc')
+
+            # Case of physical profile with mass and concentration
+            if case2:
+                # Check units and values
+                if hasunit:
+                    try:
+                        test = (u.Unit(unit)).to('Msun kpc-3')
+                    except:
+                        raise TypeError("The unit should be left empty or homogeneous to Msun/kpc^3 for a physically defined NFW")
+
+                try:
+                    test = inpar['M'].to('Msun')
+                except:
+                    raise TypeError("M should be homogeneous to Msun")
+                    
+                if inpar['M'] <= 0:
+                    raise ValueError("M should be >0")
+                
+                if inpar['c'] <= 0:
+                    raise ValueError("c should be >0")
+
+                if inpar['delta'] < 100 or inpar['delta'] > 5000:
+                    raise ValueError("delta is restricted to 100 < delta < 5000 to avoid numerical faillures")
+
+                # Compute r_s and rho_0
+                R_delta = cluster_global.Mdelta_to_Rdelta(inpar['M'].to_value('Msun'), self._redshift,
+                                                          delta=inpar['delta'], cosmo=self._cosmo)
+                r_s = (R_delta / inpar['c']) * u.kpc
+                overdens = cluster_global.concentration_to_deltac_NFW(inpar['c'], Delta=inpar['delta'])
+                rho0 = overdens * self._cosmo.critical_density(self._redshift).to('Msun kpc-3')
+
+            # Set the parameters
+            outpar = {"name": 'NFW',
+                      "rho_0" : rho0,
+                      "r_s"   : r_s}
+            
         #---------- Deal with the case of GNFW
         elif inpar['name'] == 'GNFW':
             # Check the content of the dictionary
@@ -1000,7 +1047,7 @@ class Modpar(object):
         """
 
         #---------- Inputs validation
-        self._validate_profile_model_parameters(kBT_model, 'keV')
+        kBT_model = self._validate_profile_model_parameters(kBT_model, 'keV')
 
         #---------- Extract kBT_r and n_r
         radius = np.logspace(np.log10(self._Rmin.to_value('kpc')/5), np.log10(self._R_truncation.to_value('kpc')*5), 1000)*u.kpc
@@ -1034,7 +1081,7 @@ class Modpar(object):
         """
 
         #---------- Inputs
-        self._validate_profile_model_parameters(kBT_model, 'keV')
+        kBT_model = self._validate_profile_model_parameters(kBT_model, 'keV')
         
         #---------- Extract kBT_r and P_r
         radius = np.logspace(np.log10(self._Rmin.to_value('kpc')/5), np.log10(self._R_truncation.to_value('kpc')*5), 1000)*u.kpc
@@ -1069,7 +1116,7 @@ class Modpar(object):
         """
 
         #---------- Inputs
-        self._validate_profile_model_parameters(mass_density_model, 'Msun kpc-3')
+        mass_density_model = self._validate_profile_model_parameters(mass_density_model, 'Msun kpc-3')
         
         # Pressure profile derivative
         rad = np.logspace(np.log10(self._Rmin.to_value('kpc')/5), np.log10(self._R_truncation.to_value('kpc')*5), 1000)*u.kpc
@@ -1130,7 +1177,7 @@ class Modpar(object):
         """
 
         #---------- Inputs
-        self._validate_profile_model_parameters(mass_density_model, 'Msun kpc-3')
+        mass_density_model = self._validate_profile_model_parameters(mass_density_model, 'Msun kpc-3')
         
         # Density profile
         rad = np.logspace(np.log10(self._Rmin.to_value('kpc')/5),np.log10(self._R_truncation.to_value('kpc')*5),1000)*u.kpc

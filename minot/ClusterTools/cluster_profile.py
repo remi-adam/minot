@@ -135,6 +135,11 @@ def NFW_model(r3d_kpc, norm, rs):
     - NFW model profile as a function of the input radius vector
 
     """
+
+    # rho_0 = delta_c * rho_crit
+    # rs = R_delta / c_delta
+    # delta_c = Delta/3 * c^3 (log(1+c) - c/(1+c))
+    # rho_0 = Mdelta / (4 pi rs^3) / (log(1+c) - c/(1+c))
     
     return norm / (r3d_kpc / rs) / (1 + (r3d_kpc / rs))**2
 

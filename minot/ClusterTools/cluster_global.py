@@ -61,7 +61,7 @@ def Rdelta_to_Mdelta(R_delta, redshift, delta=500, cosmo=astropy.cosmology.Planc
     return M_delta
 
 #===================================================
-#========== get r500 from m500
+#========== Convert M_deta1 to M_delta2 assuming NFW
 #===================================================
 def Mdelta1_to_Mdelta2_NFW(M_delta1, delta1=500, delta2=200, c1=3.0, redshift=0.0, cosmo=astropy.cosmology.Planck15):
     """
@@ -99,6 +99,64 @@ def Mdelta1_to_Mdelta2_NFW(M_delta1, delta1=500, delta2=200, c1=3.0, redshift=0.
     M_delta2 = Rdelta_to_Mdelta(R_delta2, redshift, delta=delta2, cosmo=cosmo)
     
     return M_delta2
+
+
+#===================================================
+#========== Compute overdensity from NFW concentration
+#===================================================
+
+def concentration_to_deltac_NFW(concentration, Delta=200):
+    """
+    Compute the overdensity, delta_c, from the concentration 
+    assuming NFW profile:
+    rho_0 = delta_c(c) x rho_crit
+
+    Parameters
+    ----------
+    - concentration: scalar
+    - Delta: the overdensity for which the concentration is given
+
+    Outputs
+    --------
+    - delta_c: scalar
+
+    """
+    
+    f1 = Delta/3 * concentration**3
+    f2 = 1 / (np.log(1+concentration) - concentration/(1+concentration))
+    return f1 * f2
+
+
+#===================================================
+#========== Compute NFW concentration from overdensity
+#===================================================
+
+def deltac_to_concentration_NFW(delta_c, Delta=200):
+    """
+    Compute the concentration from the overdensity, delta_c,
+    assuming NFW profile:
+    rho_0 = delta_c(c) x rho_crit
+
+    Parameters
+    ----------
+    - delta_c: scalar
+    - Delta: the overdensity for which the concentration is computed
+
+    Outputs
+    --------
+    - concentration: scalar
+
+    """
+    # internal function that computes the difference between input
+    # overdensity and computed on from the concentration
+    def deltac_diff_func(concentration, Delta, my_delta_c):
+        deltac = concentration_to_deltac_NFW(concentration, Delta=Delta)
+        return deltac - my_delta_c
+    
+    concentration = brentq(deltac_diff_func, 1e-5, 1e3, args=(Delta, delta_c))
+    
+    return concentration
+
 
 #===================================================
 #========== gNFW pressure normalization
