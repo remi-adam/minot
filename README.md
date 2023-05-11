@@ -92,3 +92,5 @@ In case you use minot in your research, you can cite R. Adam, H. Goksu, A. Leing
 
 - Version 0.1.1 --> Correction of warnings and minor bugs
 
+- Version 1.1.2 --> Implement new universal profiles
+
