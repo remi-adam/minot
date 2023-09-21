@@ -750,8 +750,17 @@ class Modpar(object):
 
         # Compute the normalization
         if pressure_model in ['A10UPP', 'A10CC', 'A10MD', 'P13UPP']:
-            Pnorm = cluster_global.gNFW_normalization(self._redshift, self._M500.to_value('Msun'),
-                                                      cosmo=self._cosmo)
+            mu_g,mu_e,mu_p,mu_a = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
+                                                                       Z=self._metallicity_sol*self._abundance)
+            try:
+                fb = self._cosmo.Ob0/self._cosmo.Om0
+            except:
+                fb = 0.16
+            Pnorm = cluster_global.gNFW_normalization(self._redshift,
+                                                      self._M500.to_value('Msun'),
+                                                      cosmo=self._cosmo,
+                                                      mu=mu_g, mue=mu_e, fb=fb)
+            
         if pressure_model in ['G19UPP', 'G19CC', 'G19MD']:
             E_z   = self._cosmo.efunc(self._redshift)
             h70   = self._cosmo.H0.value/70.0

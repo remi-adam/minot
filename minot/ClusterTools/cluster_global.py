@@ -161,7 +161,8 @@ def deltac_to_concentration_NFW(delta_c, Delta=200):
 #===================================================
 #========== gNFW pressure normalization
 #===================================================
-def gNFW_normalization(redshift, M500, cosmo=astropy.cosmology.Planck15):
+def gNFW_normalization(redshift, M500, cosmo=astropy.cosmology.Planck15,
+                       mu=0.59, mue=1.14, fb=0.175):
     """
     Compute a gNFW model electronic pressure normalization based on mass and redshift.
     See Arnaud et al. A&A 517, A92 (2010). This does not account to the P0 
@@ -171,7 +172,9 @@ def gNFW_normalization(redshift, M500, cosmo=astropy.cosmology.Planck15):
     ----------
     - redshift: redshift of the cluster
     - M500 (Msun): the mass within R500 of the cluster 
-
+    - cosmo (astropy.cosmology): cosmology module
+    - mu, mue, fb (float): mean molecular weights and baryon fraction. Default values are from Arnaud+2010
+    
     Outputs
     --------
     - Pnorm (keV/cm^-3): the electron pressure normalization
@@ -182,9 +185,11 @@ def gNFW_normalization(redshift, M500, cosmo=astropy.cosmology.Planck15):
     h70 = cosmo.H0.value/70.0
 
     F_M = (M500/3e14*h70)**0.12
-    P500 = 1.65e-3 * E_z**(8.0/3.0) * (M500/3e14*h70)**(2.0/3.0) * h70**2
-    
-    Pnorm = P500 * F_M
+    #P500 = 1.65e-3 * E_z**(8.0/3.0) * (M500/3e14*h70)**(2.0/3.0) * h70**2
+    P500 = (3/(8*np.pi)) * (500*cst.G**-(1/4)*cosmo.H0**2/2)**(4/3) * (mu/mue) * fb *(M500*u.Msun)**(2/3)
+    Pnorm = P500.to_value('keV cm-3') * F_M
+
+    print(P500.to_value('keV cm-3'), 1.65e-3 * E_z**(8.0/3.0) * (M500/3e14*h70)**(2.0/3.0) * h70**2)
     
     return Pnorm
 
