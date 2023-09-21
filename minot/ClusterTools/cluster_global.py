@@ -188,8 +188,6 @@ def gNFW_normalization(redshift, M500, cosmo=astropy.cosmology.Planck15,
     #P500 = 1.65e-3 * E_z**(8.0/3.0) * (M500/3e14*h70)**(2.0/3.0) * h70**2
     P500 = (3/(8*np.pi)) * (500*cst.G**-(1/4)*cosmo.H0**2/2)**(4/3) * (mu/mue) * fb *(M500*u.Msun)**(2/3)
     Pnorm = P500.to_value('keV cm-3') * F_M
-
-    print(P500.to_value('keV cm-3'), 1.65e-3 * E_z**(8.0/3.0) * (M500/3e14*h70)**(2.0/3.0) * h70**2)
     
     return Pnorm
 
