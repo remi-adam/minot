@@ -1170,7 +1170,7 @@ class Modpar(object):
     # Set a given gas density profile from P(r) and M_tot(r)
     #==================================================
     
-    def set_pressure_gas_from_mass_model(self, mass_density_model):
+    def set_pressure_gas_from_mass_model(self, mass_density_model, model_exclude_gas=False):
         """
         Set the parameters of the gas density profile using 
         the hydrostatic equilibrium and the current pressure
@@ -1182,6 +1182,12 @@ class Modpar(object):
         ----------
         - mass_density_model (dictionary): take the form 
         {'name':'NFW', 'rs':rs, 'rho0':rho0}, etc
+        - model_exclude_gas (boolean): if true, the given mass model does not include the gas mass.
+        The gas mass is already known from the electron density profile. This means that
+            M_{tot} = M_{mass_density_model} + M_{gas}
+        This correspond to the case where the mass_density_model does not account for the gas and
+        is essentially describing the dark matter.
+        In this case the value of M500 in the model does not include the gas.
 
         """
 
@@ -1198,7 +1204,7 @@ class Modpar(object):
         mu_gas,mu_e,mu_p,mu_alpha = cluster_global.mean_molecular_weight(Y=self._helium_mass_fraction,
                                                                          Z=self._metallicity_sol*self._abundance)
 
-        #---------- Get the mass
+        #---------- Get the mass model
         # NFW defined mass
         if mass_density_model['name'] is 'NFW':
             rs = mass_density_model['r_s'].to_value('kpc')
@@ -1221,6 +1227,11 @@ class Modpar(object):
                 Mtot_r[i] = model_tools.trapz_loglog(4*np.pi*rad_i.to_value('kpc')**2*rho_r_i, rad_i.to_value('kpc'))
         else:
             raise ValueError('Only the NFW mass profile is implemented.')
+
+        #---------- Add the gas mass to get the total mass if needed
+        if model_exclude_gas is True:
+            gas_mass_profile = self.get_gas_mass_profile(rad0)[1]
+            Mtot_r = Mtot_r + gas_mass_profile.to_value('Msun')
 
         #---------- Compute the pressure profile
         # Derivative
