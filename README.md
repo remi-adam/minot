@@ -94,3 +94,5 @@ In case you use minot in your research, you can cite R. Adam, H. Goksu, A. Leing
 
 - Version 1.1.2 --> Implement new universal profiles
 
+- Version 1.1.3 --> Exact UPP definition implemented; commenting updates
+
