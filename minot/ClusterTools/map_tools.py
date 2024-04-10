@@ -121,6 +121,7 @@ def define_std_header(ra_center, dec_center, FoV_x, FoV_y, reso) :
     - dec_center (deg): coordinate of the Dec. reference center
     - FoV_x (deg): size of the map along x axis
     - FoV_y (deg): size of the map along y axis
+    - reso (deg): the map resolution
 
     Outputs
     --------
@@ -161,7 +162,6 @@ def get_radec_map(header):
 
     Parameters
     ----------
-    - image: grid containing the original data
     - header: header associated to the map
 
     Outputs
