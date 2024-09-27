@@ -84,6 +84,8 @@ In the case of X-ray outputs, it will be necessary to have the XSPEC software in
 
 `conda install matplotlib`
 
+It seems that the package ebltable does not currently work with the last scipy versions. In that case, you will encounter a bug when importing minot. It may be corrected by changing line 4 of tau_from_model.py (ebltable package) as follows: "from scipy.integrate import simpson as simps"
+
 #### Reference
 In case you use minot in your research, you can cite R. Adam, H. Goksu, A. Leingärtner-Goth, et al. (2020) to acknowledge its use. The paper is availlable here and contains the full description of the code: https://ui.adsabs.harvard.edu/abs/2020arXiv200905373A/abstract. This also https://www.aanda.org/articles/aa/full_html/2020/12/aa39091-20/aa39091-20.html
 
