@@ -111,7 +111,7 @@ def get_map_norm(image, header) :
 #===================================================
 #========== Build standard wcs and header
 #===================================================
-def define_std_header(ra_center, dec_center, FoV_x, FoV_y, reso) :
+def define_std_header(ra_center, dec_center, FoV_x, FoV_y, reso, force_odd=True) :
     """
     Build a header and wcs object for a standard map
 
@@ -122,6 +122,7 @@ def define_std_header(ra_center, dec_center, FoV_x, FoV_y, reso) :
     - FoV_x (deg): size of the map along x axis
     - FoV_y (deg): size of the map along y axis
     - reso (deg): the map resolution
+    - force_odd (bool): force the number of pixels to be odd
 
     Outputs
     --------
@@ -133,8 +134,9 @@ def define_std_header(ra_center, dec_center, FoV_x, FoV_y, reso) :
     Naxisy = int(FoV_y/reso)
 
     # Makes it odd to have one pixel at the center
-    if Naxisx/2.0 == int(Naxisx/2.0): Naxisx += 1
-    if Naxisy/2.0 == int(Naxisy/2.0): Naxisy += 1
+    if force_odd:
+        if Naxisx/2.0 == int(Naxisx/2.0): Naxisx += 1
+        if Naxisy/2.0 == int(Naxisy/2.0): Naxisy += 1
 
     data_tpl = np.zeros((Naxisy, Naxisx))
     
