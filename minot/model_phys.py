@@ -1833,22 +1833,22 @@ class Physics(object):
         # Read the temperature
         with open(xspecfile) as f: 
             col = list(zip(*[line.split() for line in f]))[0]
-            Txspec = np.array(col[file_start:]).astype(np.float)
+            Txspec = np.array(col[file_start:]).astype(float)
 
         # Read Xspec counts
         with open(xspecfile) as f: 
             col = list(zip(*[line.split() for line in f]))[1]
-            Cxspec = np.array(col[file_start:]).astype(np.float)
+            Cxspec = np.array(col[file_start:]).astype(float)
 
         # Read Xspec surface brightness
         with open(xspecfile) as f: 
             col = list(zip(*[line.split() for line in f]))[2]
-            Sxspec = np.array(col[file_start:]).astype(np.float)
+            Sxspec = np.array(col[file_start:]).astype(float)
 
         # Read Xspec rate
         with open(xspecfile) as f: 
             col = list(zip(*[line.split() for line in f]))[3]
-            Rxspec = np.array(col[file_start:]).astype(np.float)
+            Rxspec = np.array(col[file_start:]).astype(float)
         
         # Define interpolation and set unit
         Citpl = interpolate.interp1d(Txspec, Cxspec, kind='cubic', fill_value='extrapolate')
