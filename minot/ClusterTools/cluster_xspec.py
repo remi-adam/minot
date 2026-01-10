@@ -6,6 +6,7 @@ It requires to have xspec installed on your machine.
 
 import os
 import re
+import subprocess
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -227,8 +228,19 @@ def run_xspec(nH, Tgas, ab, redshift, emin, emax,
                     resp_file=resp_file, data_file=data_file, app_nH_model=app_nH_model)
     
     if os.path.isfile(file_out): os.remove(file_out)
-    runXSPEC = 'xspec '+file_ana+' > '+file_out
-    os.system(runXSPEC)
+
+    env = os.environ.copy()
+    env["HEADAS"] = os.environ.get("HEADAS")
+    env["DYLD_LIBRARY_PATH"] = env["HEADAS"] + "/lib"
+
+    subprocess.run(
+        ["xspec", file_ana],
+        stdout=open(file_out, "w"),
+        env=env
+    )
+    
+    #runXSPEC = 'xspec '+file_ana+' > '+file_out
+    #os.system(runXSPEC)
 
     flux, counts, rate = get_xspec_flux(file_out)
 
