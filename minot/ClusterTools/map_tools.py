@@ -297,7 +297,7 @@ def roi_extract_healpix(file_name, ra, dec, reso_deg, FoV_deg, save_file=None, v
     #======== Show the full sky map
     if visu:        
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=mpl.cbook.mplDeprecation)
+            warnings.filterwarnings("ignore", category=mpl.MatplotlibDeprecationWarning)
             healpy.visufunc.mollview(map=image_hp,
                                      xsize=800,
                                      min=None, max=None,
@@ -314,7 +314,7 @@ def roi_extract_healpix(file_name, ra, dec, reso_deg, FoV_deg, save_file=None, v
     #======== Extract the gnomview
     if visu:
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=mpl.cbook.mplDeprecation)
+            warnings.filterwarnings("ignore", category=mpl.MatplotlibDeprecationWarning)
             image_roi = healpy.visufunc.gnomview(map=image_hp,
                                                  coord=('G', 'C'),
                                                  rot=(coord.ra.value, coord.dec.value, 0.0),
@@ -329,7 +329,7 @@ def roi_extract_healpix(file_name, ra, dec, reso_deg, FoV_deg, save_file=None, v
             
     else:
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=mpl.cbook.mplDeprecation)
+            warnings.filterwarnings("ignore", category=mpl.MatplotlibDeprecationWarning)
             image_roi = healpy.visufunc.gnomview(map=image_hp,
                                                  coord=('G', 'C'),
                                                  rot=(coord.ra.value, coord.dec.value, 0.0),
