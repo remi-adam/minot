@@ -356,10 +356,14 @@ def los_integration_2dfunc(f_E_r, eng, r3d, r2d, los):
     r3d_g2_flat_sort = np.sort(r3d_g2_flat)
     index_sort = np.argsort(r3d_g2_flat)   # r3d_g2_flat[index_sort] gives r3d_g2_flat_sort
     index = np.argsort(index_sort)         # r3d_g2_flat_sort[index] gives r3d_g2_flat
-
+    
     # Interpolated the function at the new position    
-    itpl = interpolate.interp2d(r3d, eng, f_E_r, kind='cubic')
-    f_E_r_g2_flat_sort = itpl(r3d_g2_flat_sort, eng)
+    r = interpolate.RectBivariateSpline(r3d.value, eng.value, f_E_r.T)
+    rt = lambda xnew, ynew: r(xnew, ynew).T
+    f_E_r_g2_flat_sort = rt(r3d_g2_flat_sort, eng)
+    
+    #itpl = interpolate.interp2d(r3d, eng, f_E_r, kind='cubic')       # f = interp2d(x, y, z, kind='cubic')
+    #f_E_r_g2_flat_sort = itpl(r3d_g2_flat_sort, eng)                 # znew = f(xnew, ynew)
 
     # Reshaping to make it as expected: unsorted and Neng x Nr2d x Nlos
     f_E_r_g2_flat = f_E_r_g2_flat_sort[:,index]
