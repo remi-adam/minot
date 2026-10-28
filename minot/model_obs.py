@@ -50,6 +50,37 @@ class Observables(object):
     """
     
     #==================================================
+    # From intrinsic luminosity to flux
+    #==================================================
+
+    def _luminosity_to_flux_factor(self, Cframe=False):
+        """
+        Factor converting the intrinsic emission (per unit rest-frame energy and
+        time, evaluated at the rest-frame energy E(1+z)) into the observed flux
+        (per unit observed energy, time and area).
+
+        The observed energy interval is narrower by (1+z) and the arrival time
+        is longer by (1+z), so these two effects cancel, and the photons are
+        spread over 4 pi D_M^2, with D_M = D_L/(1+z) the comoving distance:
+        factor = 1/(4 pi D_M^2) = (1+z)^2/(4 pi D_L^2).
+        In the cluster frame (Cframe=True), no redshift effect: 1/(4 pi D_L^2).
+
+        Parameters
+        ----------
+        - Cframe (bool): computation in the cluster frame (no redshift effect)
+
+        Outputs
+        ----------
+        - factor (quantity): homogeneous to cm-2
+        """
+
+        factor = 1.0 / (4*np.pi * self._D_lum**2)
+        if not Cframe:
+            factor = factor * (1+self._redshift)**2
+
+        return factor
+
+    #==================================================
     # Compute gamma ray spectrum
     #==================================================
 
@@ -130,7 +161,7 @@ class Observables(object):
                                                           Rtrunc=self._R_truncation)
         
         # From intrinsic luminosity to flux
-        dN_dEdSdt = dN_dEdt / (4*np.pi * self._D_lum**2)
+        dN_dEdSdt = dN_dEdt * self._luminosity_to_flux_factor(Cframe)
 
         # Apply EBL absorbtion
         if self._EBL_model != 'none' and not Cframe:
@@ -215,7 +246,7 @@ class Observables(object):
         dN_dtdO = dN_dVdt_proj * self._D_ang**2 * u.Unit('sr-1')
 
         # From intrinsic luminosity to flux
-        dN_dSdtdO = dN_dtdO / (4*np.pi * self._D_lum**2)
+        dN_dSdtdO = dN_dtdO * self._luminosity_to_flux_factor(Cframe)
         
         # return
         if Energy_density:
@@ -370,7 +401,7 @@ class Observables(object):
                    rad_i = model_tools.sampling_array(Rmin, Rmax[i], NptPd=self._Npt_per_decade_integ, unit=True)
                    dN_dVdt_i = itpl(rad_i.to_value('kpc'))*dN_dVdt.unit
                    lum_i = model_tools.spherical_integration(dN_dVdt_i, rad_i)
-                   flux[i] =  lum_i / (4*np.pi * self._D_lum**2)
+                   flux[i] =  lum_i * self._luminosity_to_flux_factor(Cframe)
                 
             # Case of cylindrical integral
             if type_integral == 'cylindrical':
@@ -380,7 +411,7 @@ class Observables(object):
                 dN_dVdt_proj = model_tools.los_integration_1dfunc(dN_dVdt, r3d, radius, los)
                 dN_dVdt_proj[radius > self._R_truncation] = 0
 
-                dN_dSdVdt_proj = dN_dVdt_proj / (4*np.pi * self._D_lum**2)
+                dN_dSdVdt_proj = dN_dVdt_proj * self._luminosity_to_flux_factor(Cframe)
         
                 itpl = interpolate.interp1d(radius.to_value('kpc'), dN_dSdVdt_proj.value, kind='linear')
                 
@@ -642,7 +673,7 @@ class Observables(object):
                                                           Rtrunc=self._R_truncation)
         
         # From intrinsic luminosity to flux
-        dN_dEdSdt = dN_dEdt / (4*np.pi * self._D_lum**2)
+        dN_dEdSdt = dN_dEdt * self._luminosity_to_flux_factor(Cframe)
         
         return energy, dN_dEdSdt.to('GeV-1 cm-2 s-1')
     
@@ -717,7 +748,7 @@ class Observables(object):
         dN_dtdO = dN_dVdt_proj * self._D_ang**2 * u.Unit('sr-1')
 
         # From intrinsic luminosity to flux
-        dN_dSdtdO = dN_dtdO / (4*np.pi * self._D_lum**2)
+        dN_dSdtdO = dN_dtdO * self._luminosity_to_flux_factor(Cframe)
         
         # return
         if Energy_density:
@@ -866,7 +897,7 @@ class Observables(object):
                    rad_i = model_tools.sampling_array(Rmin, Rmax[i], NptPd=self._Npt_per_decade_integ, unit=True)
                    dN_dVdt_i = itpl(rad_i.to_value('kpc'))*dN_dVdt.unit
                    lum_i = model_tools.spherical_integration(dN_dVdt_i, rad_i)
-                   flux[i] =  lum_i / (4*np.pi * self._D_lum**2)
+                   flux[i] =  lum_i * self._luminosity_to_flux_factor(Cframe)
                 
             # Case of cylindrical integral
             if type_integral == 'cylindrical':
@@ -876,7 +907,7 @@ class Observables(object):
                 dN_dVdt_proj = model_tools.los_integration_1dfunc(dN_dVdt, r3d, radius, los)
                 dN_dVdt_proj[radius > self._R_truncation] = 0
 
-                dN_dSdVdt_proj = dN_dVdt_proj / (4*np.pi * self._D_lum**2)
+                dN_dSdVdt_proj = dN_dVdt_proj * self._luminosity_to_flux_factor(Cframe)
         
                 itpl = interpolate.interp1d(radius.to_value('kpc'), dN_dSdVdt_proj.value, kind='linear')
                 
@@ -1141,7 +1172,7 @@ class Observables(object):
                                                           Rtrunc=self._R_truncation)
         
         # From intrinsic luminosity to flux
-        dN_dEdSdt = dN_dEdt / (4*np.pi * self._D_lum**2)
+        dN_dEdSdt = dN_dEdt * self._luminosity_to_flux_factor(Cframe)
 
         # Apply EBL absorbtion
         if self._EBL_model != 'none' and not Cframe:
@@ -1224,7 +1255,7 @@ class Observables(object):
         dN_dtdO = dN_dVdt_proj * self._D_ang**2 * u.Unit('sr-1')
 
         # From intrinsic luminosity to flux
-        dN_dSdtdO = dN_dtdO / (4*np.pi * self._D_lum**2)
+        dN_dSdtdO = dN_dtdO * self._luminosity_to_flux_factor(Cframe)
         
         # return
         if Energy_density:
@@ -1376,7 +1407,7 @@ class Observables(object):
                    rad_i = model_tools.sampling_array(Rmin, Rmax[i], NptPd=self._Npt_per_decade_integ, unit=True)
                    dN_dVdt_i = itpl(rad_i.to_value('kpc'))*dN_dVdt.unit
                    lum_i = model_tools.spherical_integration(dN_dVdt_i, rad_i)
-                   flux[i] =  lum_i / (4*np.pi * self._D_lum**2)
+                   flux[i] =  lum_i * self._luminosity_to_flux_factor(Cframe)
                 
             # Case of cylindrical integral
             if type_integral == 'cylindrical':
@@ -1386,7 +1417,7 @@ class Observables(object):
                 dN_dVdt_proj = model_tools.los_integration_1dfunc(dN_dVdt, r3d, radius, los)
                 dN_dVdt_proj[radius > self._R_truncation] = 0
 
-                dN_dSdVdt_proj = dN_dVdt_proj / (4*np.pi * self._D_lum**2)
+                dN_dSdVdt_proj = dN_dVdt_proj * self._luminosity_to_flux_factor(Cframe)
         
                 itpl = interpolate.interp1d(radius.to_value('kpc'), dN_dSdVdt_proj.value, kind='linear')
                 
@@ -1640,7 +1671,7 @@ class Observables(object):
                                                           Rtrunc=self._R_truncation)
             
         # From intrinsic luminosity to flux
-        dN_dEdSdt = dN_dEdt / (4*np.pi * self._D_lum**2)
+        dN_dEdSdt = dN_dEdt * self._luminosity_to_flux_factor(Cframe)
         
         return frequency, (dN_dEdSdt * energy**2 / frequency).to('Jy')
     
@@ -1703,7 +1734,7 @@ class Observables(object):
         dN_dtdO_E = dN_dVdt_E_proj * self._D_ang**2 * u.Unit('sr-1')
 
         # From intrinsic luminosity to flux
-        dN_dSdtdO_E = dN_dtdO_E / (4*np.pi * self._D_lum**2)
+        dN_dSdtdO_E = dN_dtdO_E * self._luminosity_to_flux_factor(Cframe)
         
         # return
         sed = (dN_dSdtdO_E * eng0**2/freq0).to('Jy sr-1')
@@ -1799,7 +1830,7 @@ class Observables(object):
                    rad_i = model_tools.sampling_array(Rmin, Rmax[i], NptPd=self._Npt_per_decade_integ, unit=True)
                    dN_dVdt_E_i = itpl(rad_i.to_value('kpc'))*dN_dVdt_E.unit
                    lum_i = model_tools.spherical_integration(dN_dVdt_E_i, rad_i) * eng0**2/freq0
-                   flux[i] =  lum_i / (4*np.pi * self._D_lum**2)
+                   flux[i] =  lum_i * self._luminosity_to_flux_factor(Cframe)
                 
             # Case of cylindrical integral
             if type_integral == 'cylindrical':
@@ -1809,7 +1840,7 @@ class Observables(object):
                 dN_dVdt_E_proj = model_tools.los_integration_1dfunc(dN_dVdt_E, r3d, radius, los)
                 dN_dVdt_E_proj[radius > self._R_truncation] = 0
 
-                dN_dSdVdt_E_proj = dN_dVdt_E_proj / (4*np.pi * self._D_lum**2)
+                dN_dSdVdt_E_proj = dN_dVdt_E_proj * self._luminosity_to_flux_factor(Cframe)
         
                 itpl = interpolate.interp1d(radius.to_value('kpc'), dN_dSdVdt_E_proj.value, kind='linear')
                 
